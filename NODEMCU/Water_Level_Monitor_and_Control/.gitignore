@@ -26,7 +26,7 @@ _autosave-*
 *.dsn
 *.ses
 
-Smart_Posture_Corrector-backups/
+Water_Level_Monitor_and_Control-backups/
 
 # SolidWorks temporary owner files
 ~$*

@@ -26,7 +26,7 @@ _autosave-*
 *.dsn
 *.ses
 
-Smart_Posture_Corrector-backups/
+Dual_Axis_Solar_Tracker-backups/
 
 # SolidWorks temporary owner files
 ~$*
