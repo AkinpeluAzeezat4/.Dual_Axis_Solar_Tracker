@@ -1,0 +1,2 @@
+# Smart_Transformer_Health_Monitoring_System
+Generated using KiCad Industrial Setup Script
