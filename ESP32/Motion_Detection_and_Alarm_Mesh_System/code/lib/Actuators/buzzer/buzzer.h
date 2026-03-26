@@ -7,7 +7,7 @@
 namespace buzzer
 {
 
-  void begin();
+  void begin(int pin);
   void update();
 
   void on();

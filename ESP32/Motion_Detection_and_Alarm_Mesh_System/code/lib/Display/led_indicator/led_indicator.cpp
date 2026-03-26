@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "Pins.h"
 #include "led_indicator.h"
 
 namespace led_indicator
