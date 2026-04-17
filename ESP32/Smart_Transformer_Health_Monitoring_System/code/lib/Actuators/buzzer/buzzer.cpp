@@ -1,49 +1,57 @@
 #include "buzzer/buzzer.h"
-const int BUZZER_PIN = Pins::GPIO15;
+#include "Pins.h"
+#include <Arduino.h>
+#include "buzzer.h"
+
 namespace buzzer
 {
+  static uint8_t BUZZER_PIN = 255;
+  bool active = false;
+  bool beeping = false;
+  bool alarmRunning = false;
 
-    bool active = false;
-    bool beeping = false;
-    unsigned long beepStart = 0;
-    unsigned long beepDuration = 0;
+  unsigned long beepStart = 0;
+  unsigned long beepDuration = 0;
 
-    void begin()
+  void begin(uint8_t pin)
+  {
+    BUZZER_PIN = pin;
+    pinMode(BUZZER_PIN, OUTPUT);
+    Pins::writePin(BUZZER_PIN, LOW);
+  }
+
+  void update()
+  {
+    if (beeping)
     {
-        pinMode(BUZZER_PIN, OUTPUT); // buzzer pin
-        Pins::writePin(BUZZER_PIN, LOW);
+      if (millis() - beepStart >= beepDuration)
+      {
+        off();
+        beeping = false;
+      }
     }
+  }
 
-    void update()
-    {
-        if (beeping)
-        {
-            if (millis() - beepStart >= beepDuration)
-            {
-                off();
-                beeping = false;
-            }
-        }
-    }
+  void on()
+  {
+    active = true;
+    Pins::writePin(BUZZER_PIN, true);
+  }
 
-    void on()
-    {
-        active = true;
-        Pins::writePin(BUZZER_PIN, HIGH);
-    }
+  void off()
+  {
+    active = false;
+    Pins::writePin(BUZZER_PIN, false);
+  }
 
-    void off()
-    {
-        active = false;
-        Pins::writePin(BUZZER_PIN, LOW);
-    }
+  void beep(uint16_t duration_ms)
+  {
+    if (beeping)
+      return;
 
-    void beep(uint16_t duration_ms)
-    {
-        beepDuration = duration_ms;
-        beepStart = millis();
-        beeping = true;
-        on();
-    }
-
+    beepDuration = duration_ms;
+    beepStart = millis();
+    beeping = true;
+    on();
+  }
 }
