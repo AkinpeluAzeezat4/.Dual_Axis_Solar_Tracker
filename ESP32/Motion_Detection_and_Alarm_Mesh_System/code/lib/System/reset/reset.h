@@ -1,6 +1,14 @@
-#pragma once
+#ifndef RESET_H
+#define RESET_H
 
-namespace reset {
+#include <Arduino.h>
+
+namespace reset
+{
+
   void begin();
-  void update();
+  void trigger();
+
 }
+
+#endif

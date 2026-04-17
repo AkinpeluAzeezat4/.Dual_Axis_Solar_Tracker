@@ -2,18 +2,21 @@
 #define BUZZER_H
 
 #include <Arduino.h>
-#include "Pins.h"
 
 namespace buzzer
 {
-
-  void begin(int pin);
+  void begin(uint8_t pin);
   void update();
 
   void on();
   void off();
   void beep(uint16_t duration_ms);
 
+  void startAlarm();
+  void stopAlarm();
+
+  bool isActive();
+  bool isAlarmRunning();
 }
 
 #endif

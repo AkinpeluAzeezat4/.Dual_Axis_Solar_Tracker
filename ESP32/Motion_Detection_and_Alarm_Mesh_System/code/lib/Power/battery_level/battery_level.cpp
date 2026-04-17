@@ -1,30 +1,40 @@
+#include <Arduino.h>
 #include "battery_level.h"
-#include "pins.h"
-
-const uint8_t BATTERY_PIN = Pins::GPIO34; // battery voltage input pin
 
 namespace battery_level
 {
-    static float v = 0.0;
-    static uint8_t pct = 0;
-    static bool low = false;
+  static uint8_t batteryPin = 255;
+  static float voltage = 0.0f;
+  static float scaleFactor = 1.61f;
 
-    void begin()
+  static unsigned long lastReadTime = 0;
+  static const unsigned long readInterval = 500;
+
+  void begin(uint8_t pin, float scale)
+  {
+    batteryPin = pin;
+    scaleFactor = scale;
+
+    analogReadResolution(12);
+    analogSetPinAttenuation(batteryPin, ADC_11db);
+  }
+
+  void update()
+  {
+    unsigned long now = millis();
+
+    if (now - lastReadTime >= readInterval)
     {
-        pinMode(BATTERY_PIN, INPUT);
+      lastReadTime = now;
+
+      int raw = analogRead(batteryPin);
+      float adcVoltage = (raw / 4095.0f) * 3.3f;
+      voltage = adcVoltage * scaleFactor;
     }
+  }
 
-    void update()
-    {
-        int raw = analogRead(BATTERY_PIN);
-
-        v = (raw / 4095.0) * 3.3 * 2.0;
-        pct = constrain(map(v * 100, 330, 420, 0, 100), 0, 100);
-
-        low = (pct <= 20);
-    }
-
-    float voltage() { return v; }
-    uint8_t percentage() { return pct; }
-    bool isLow() { return low; }
+  float getVoltage()
+  {
+    return voltage;
+  }
 }

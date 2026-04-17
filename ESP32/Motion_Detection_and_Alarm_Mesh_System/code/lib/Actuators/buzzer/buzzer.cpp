@@ -1,15 +1,19 @@
 #include "buzzer/buzzer.h"
 #include "Pins.h"
+#include <Arduino.h>
+#include "buzzer.h"
+
 namespace buzzer
 {
-
-  int BUZZER_PIN;
+  static uint8_t BUZZER_PIN = 255;
   bool active = false;
   bool beeping = false;
+  bool alarmRunning = false;
+
   unsigned long beepStart = 0;
   unsigned long beepDuration = 0;
 
-  void begin(int pin)
+  void begin(uint8_t pin)
   {
     BUZZER_PIN = pin;
     pinMode(BUZZER_PIN, OUTPUT);
@@ -50,5 +54,4 @@ namespace buzzer
     beeping = true;
     on();
   }
-
 }

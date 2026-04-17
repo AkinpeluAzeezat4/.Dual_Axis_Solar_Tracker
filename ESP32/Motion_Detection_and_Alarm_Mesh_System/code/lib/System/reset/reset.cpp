@@ -1,12 +1,16 @@
-#include <Arduino.h>
-#include "reset.h"
+#include "reset/reset.h"
 
-namespace reset {
+namespace reset
+{
 
-void begin() {
-}
+    void begin()
+    {
+        // nothing needed
+    }
 
-void update() {
-}
+    void trigger()
+    {
+        ESP.restart();
+    }
 
 }
