@@ -1,12 +1,17 @@
 #include <Arduino.h>
 #include "WiFi.h"
 
-namespace WiFi {
+namespace WiFi
+{
+  void begin()
+  {
+  }
 
-void begin() {
-}
-
-void update() {
-}
-
+  void update()
+  {
+  }
+  bool isConnected()
+  {
+    return false;
+  }
 }

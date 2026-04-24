@@ -1,45 +1,112 @@
 #include "rotary_encoder.h"
-
-const int ENCODER_A = Pins::GPIO15;
-const int ENCODER_B = Pins::GPIO15;
-const int ENCODER_SW = Pins::GPIO15;
+#include "pins.h"
 
 namespace rotary_encoder
 {
+  int position = 0;
+  int lastReported = 0;
 
-    // Encoder state
-    volatile int position = 0;
-    volatile bool lastA = 0;
-    volatile bool lastB = 0;
-    bool buttonState = false;
+  uint8_t lastEncoded = 0;
 
-    void begin()
+  bool pressed = false;
+  bool lastButtonReading = HIGH;
+  bool stableButtonState = HIGH;
+  bool longPressDone = false;
+
+  unsigned long lastDebounceTime = 0;
+  unsigned long pressStartTime = 0;
+
+  ButtonEvent eventState = NONE;
+
+  const unsigned long debounceDelay = 40;
+  const unsigned long longPressTime = 1200;
+
+  void begin()
+  {
+    uint8_t a = Pins::readPin(Pins::ENC_CLK);
+    uint8_t b = Pins::readPin(Pins::ENC_DT);
+
+    lastEncoded = (a << 1) | b;
+  }
+
+  void update()
+  {
+    uint8_t a = Pins::readPin(Pins::ENC_CLK);
+    uint8_t b = Pins::readPin(Pins::ENC_DT);
+
+    uint8_t encoded = (a << 1) | b;
+    uint8_t sum = (lastEncoded << 2) | encoded;
+
+    if (sum == 0b1101 || sum == 0b0100 || sum == 0b0010 || sum == 0b1011)
+      position++;
+
+    if (sum == 0b1110 || sum == 0b0111 || sum == 0b0001 || sum == 0b1000)
+      position--;
+
+    lastEncoded = encoded;
+
+    bool reading = Pins::readPin(Pins::ENC_SW);
+    unsigned long now = millis();
+
+    if (reading != lastButtonReading)
+      lastDebounceTime = now;
+
+    if ((now - lastDebounceTime) > debounceDelay)
     {
-        lastA = Pins::readPin(ENCODER_A); // encoder A
-        lastB = Pins::readPin(ENCODER_B); // encoder B
-    }
+      if (reading != stableButtonState)
+      {
+        stableButtonState = reading;
 
-    void update()
-    {
-        bool A = Pins::readPin(ENCODER_A); // encoder A
-        bool B = Pins::readPin(ENCODER_B); // encoder B
-
-        // Detect rotation
-        if (A != lastA)
+        if (stableButtonState == LOW)
         {
-            if (A == B)
-                position++;
-            else
-                position--;
+          pressed = true;
+          pressStartTime = now;
+          longPressDone = false;
         }
-        lastA = A;
-        lastB = B;
+        else
+        {
+          pressed = false;
 
-        // Button state
-        buttonState = (Pins::readPin(ENCODER_SW) == LOW); // encoder button
+          if (!longPressDone)
+            eventState = SHORT_PRESS;
+        }
+      }
     }
 
-    int getPosition() { return position; }
-    bool isPressed() { return buttonState; }
+    if (pressed && !longPressDone && (now - pressStartTime >= longPressTime))
+    {
+      longPressDone = true;
+      eventState = LONG_PRESS;
+    }
 
+    lastButtonReading = reading;
+  }
+
+  int getPosition()
+  {
+    return position / 4;
+  }
+
+  int getDelta()
+  {
+    int current = getPosition();
+    int delta = current - lastReported;
+    lastReported = current;
+    return delta;
+  }
+
+  bool isPressed()
+  {
+    return pressed;
+  }
+
+  ButtonEvent getButtonEvent()
+  {
+    return eventState;
+  }
+
+  void clearButtonEvent()
+  {
+    eventState = NONE;
+  }
 }

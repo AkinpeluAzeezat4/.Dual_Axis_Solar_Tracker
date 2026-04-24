@@ -1,6 +1,8 @@
 #pragma once
 
-namespace WiFi {
+namespace WiFi
+{
   void begin();
   void update();
+  bool isConnected();
 }

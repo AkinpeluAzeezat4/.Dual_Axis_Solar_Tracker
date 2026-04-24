@@ -25,10 +25,10 @@ namespace Pins
     const uint8_t GPIO27 = 27;
     const uint8_t GPIO32 = 32;
     const uint8_t GPIO33 = 33;
-    const uint8_t GPIO34 = 34; // input only
-    const uint8_t GPIO35 = 35; // input only
-    const uint8_t GPIO36 = 36; // input only
-    const uint8_t GPIO39 = 39; // input only
+    const uint8_t GPIO34 = 34;
+    const uint8_t GPIO35 = 35;
+    const uint8_t GPIO36 = 36;
+    const uint8_t GPIO39 = 39;
 
     void begin()
     {

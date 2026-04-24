@@ -1,84 +1,65 @@
-#include <Arduino.h>
 #include "led_indicator.h"
+#include <Arduino.h>
+#include <Adafruit_NeoPixel.h>
+#include <math.h>
+
+namespace
+{
+  Adafruit_NeoPixel *pixel = nullptr;
+
+  constexpr uint16_t BREATHE_PERIOD = 4000;
+  constexpr uint8_t MIN_BRIGHTNESS = 0;
+  constexpr uint8_t MAX_BRIGHTNESS = 180;
+
+  uint8_t getBreathingLevel()
+  {
+    float phase = (millis() % BREATHE_PERIOD) / (float)BREATHE_PERIOD;
+    float wave = (cosf(phase * 2.0f * PI) + 1.0f) * 0.5f;
+    float shaped = wave * wave;
+    return MIN_BRIGHTNESS + (uint8_t)((MAX_BRIGHTNESS - MIN_BRIGHTNESS) * shaped);
+  }
+}
 
 namespace led_indicator
 {
-  int ledPin;
-  const int pwmChannel = 0;
-  const int pwmFreq = 10000;
-  const int pwmResolution = 8;
-
-  int brightness = 0;
-  bool rising = true;
-
-  unsigned long lastUpdate = 0;
-  const int stepTime = 1;
-
-  int pulseCount = 0;
-
-  bool inPause = false;
-  unsigned long pauseStart = 0;
-  const int pauseDuration = 1000;
-
   void begin(uint8_t pin)
   {
-    ledPin = pin;
+    if (pixel != nullptr)
+    {
+      delete pixel;
+      pixel = nullptr;
+    }
 
-    ledcSetup(pwmChannel, pwmFreq, pwmResolution);
-    ledcAttachPin(ledPin, pwmChannel);
+    pixel = new Adafruit_NeoPixel(1, pin, NEO_GRB + NEO_KHZ800);
+    pixel->begin();
+    pixel->clear();
+    pixel->show();
   }
 
-  void update()
+  void update(const char *command)
   {
-    unsigned long now = millis();
-
-    // handle pause state (non-blocking)
-    if (inPause)
+    if (pixel == nullptr)
     {
-      if (now - pauseStart >= pauseDuration)
-      {
-        inPause = false;
-      }
-      else
-      {
-        return;
-      }
-    }
-
-    if (now - lastUpdate < stepTime)
       return;
-
-    lastUpdate = now;
-
-    if (rising)
-    {
-      brightness += 1;
-
-      if (brightness >= 255)
-      {
-        brightness = 255;
-        rising = false;
-      }
-    }
-    else
-    {
-      brightness -= 1;
-
-      if (brightness <= 0)
-      {
-        brightness = 0;
-        rising = true;
-        pulseCount++;
-
-        if (pulseCount >= 2)
-        {
-          pulseCount = 0;
-          inPause = true;
-          pauseStart = now;
-        }
-      }
     }
 
-    ledcWrite(pwmChannel, brightness);
+    if (strcmp(command, "fault") == 0)
+    {
+      pixel->setPixelColor(0, pixel->Color(255, 0, 0));
+      pixel->show();
+      return;
+    }
+    else if (strcmp(command, "active") == 0)
+    {
+      pixel->setPixelColor(0, pixel->Color(0, 0, 255));
+      pixel->show();
+      return;
+    }
+    else if (strcmp(command, "normal") == 0)
+    {
+      uint8_t level = getBreathingLevel();
+      pixel->setPixelColor(0, pixel->Color(0, level, 0));
+      pixel->show();
+    }
   }
 }

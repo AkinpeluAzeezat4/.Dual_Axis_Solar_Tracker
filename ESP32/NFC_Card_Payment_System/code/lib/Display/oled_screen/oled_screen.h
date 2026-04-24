@@ -1,6 +1,14 @@
-#pragma once
+#ifndef OLED_SCREEN_H
+#define OLED_SCREEN_H
 
-namespace oled_screen {
-  void begin();
-  void update();
+#include <stdint.h>
+
+namespace oled_screen
+{
+  void begin(uint8_t sdaPin, uint8_t sclPin);
+  static void drawTapToPayZoom();
+  void update(const char *command, const char *amount = nullptr);
+
 }
+
+#endif

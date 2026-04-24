@@ -37,4 +37,16 @@ namespace battery_level
   {
     return voltage;
   }
+
+  uint8_t getPercentage()
+  {
+    float percent = ((voltage - 3.0f) / (4.2f - 3.0f)) * 100.0f;
+
+    if (percent < 0.0f)
+      percent = 0.0f;
+    if (percent > 100.0f)
+      percent = 100.0f;
+
+    return (uint8_t)percent;
+  }
 }
