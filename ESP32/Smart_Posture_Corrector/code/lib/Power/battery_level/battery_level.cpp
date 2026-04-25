@@ -1,40 +1,80 @@
 #include <Arduino.h>
 #include "battery_level.h"
+#include "Pins.h"
 
 namespace battery_level
 {
-  static uint8_t batteryPin = 255;
   static float voltage = 0.0f;
-  static float scaleFactor = 1.61f;
+  static uint8_t percentage = 0;
+  static unsigned long lastUpdate = 0;
 
-  static unsigned long lastReadTime = 0;
-  static const unsigned long readInterval = 500;
+  static const unsigned long updateInterval = 500;
 
-  void begin(uint8_t pin, float scale)
+  static const float adcRef = 3.3f;
+  static const float adcMax = 4095.0f;
+  static const float dividerRatio = 2.0f;
+
+  static const float batteryMin = 3.20f;
+  static const float batteryMax = 4.20f;
+
+  static uint8_t voltageToPercent(float v)
   {
-    batteryPin = pin;
-    scaleFactor = scale;
+    if (v <= batteryMin)
+      return 0;
+    if (v >= batteryMax)
+      return 100;
 
+    return (uint8_t)(((v - batteryMin) / (batteryMax - batteryMin)) * 100.0f);
+  }
+
+  static void readBattery()
+  {
+    uint32_t sum = 0;
+
+    for (uint8_t i = 0; i < 20; i++)
+    {
+      sum += analogRead(Pins::BATTERY_ADC);
+    }
+
+    float raw = sum / 20.0f;
+    voltage = (raw * adcRef / adcMax) * dividerRatio;
+    percentage = voltageToPercent(voltage);
+  }
+
+  void begin()
+  {
     analogReadResolution(12);
-    analogSetPinAttenuation(batteryPin, ADC_11db);
+    analogSetPinAttenuation(Pins::BATTERY_ADC, ADC_11db);
+
+    readBattery();
+    lastUpdate = millis();
   }
 
   void update()
   {
     unsigned long now = millis();
 
-    if (now - lastReadTime >= readInterval)
+    if (now - lastUpdate < updateInterval)
     {
-      lastReadTime = now;
-
-      int raw = analogRead(batteryPin);
-      float adcVoltage = (raw / 4095.0f) * 3.3f;
-      voltage = adcVoltage * scaleFactor;
+      return;
     }
+
+    lastUpdate = now;
+    readBattery();
   }
 
   float getVoltage()
   {
     return voltage;
+  }
+
+  uint8_t getPercentage()
+  {
+    return percentage;
+  }
+
+  bool isLow()
+  {
+    return percentage <= 20;
   }
 }

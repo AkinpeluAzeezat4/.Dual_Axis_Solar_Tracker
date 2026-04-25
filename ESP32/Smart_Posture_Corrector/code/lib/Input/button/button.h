@@ -1,6 +1,12 @@
 #pragma once
+#include <Arduino.h>
 
-namespace button {
+namespace button
+{
   void begin();
   void update();
+
+  bool wasPressed();
+  bool wasLongPressed();
+  bool isPressed();
 }

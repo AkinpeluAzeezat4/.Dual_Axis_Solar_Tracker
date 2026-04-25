@@ -1,29 +1,29 @@
 #include <Arduino.h>
-#include "buzzer.h"
+#include "vibrator.h"
 #include "Pins.h"
 
-namespace buzzer
+namespace vibration_motor
 {
-  static const uint8_t channel = 1;
+  static const uint8_t channel = 0;
 
   static bool alertState = false;
   static bool outputState = false;
-  static bool singleBeep = false;
+  static bool singlePulse = false;
 
-  static unsigned long beepStart = 0;
+  static unsigned long pulseStart = 0;
   static unsigned long lastToggle = 0;
-  static uint16_t beepDuration = 0;
+  static uint16_t pulseDuration = 0;
 
   static void writeOutput(bool state)
   {
     outputState = state;
-    ledcWrite(channel, state ? 180 : 0);
+    ledcWrite(channel, state ? 220 : 0);
   }
 
   void begin()
   {
-    ledcSetup(channel, 2000, 8);
-    ledcAttachPin(Pins::BUZZER, channel);
+    ledcSetup(channel, 5000, 8);
+    ledcAttachPin(Pins::VIBRATION_MOTOR, channel);
     writeOutput(false);
   }
 
@@ -31,11 +31,11 @@ namespace buzzer
   {
     unsigned long now = millis();
 
-    if (singleBeep)
+    if (singlePulse)
     {
-      if (now - beepStart >= beepDuration)
+      if (now - pulseStart >= pulseDuration)
       {
-        singleBeep = false;
+        singlePulse = false;
         writeOutput(false);
       }
       return;
@@ -47,7 +47,7 @@ namespace buzzer
       return;
     }
 
-    if (now - lastToggle >= 300)
+    if (now - lastToggle >= 500)
     {
       lastToggle = now;
       writeOutput(!outputState);
@@ -60,16 +60,16 @@ namespace buzzer
 
     if (!alertState)
     {
-      singleBeep = false;
+      singlePulse = false;
       writeOutput(false);
     }
   }
 
-  void beep(uint16_t durationMs)
+  void pulse(uint16_t durationMs)
   {
-    singleBeep = true;
-    beepStart = millis();
-    beepDuration = durationMs;
+    singlePulse = true;
+    pulseStart = millis();
+    pulseDuration = durationMs;
     writeOutput(true);
   }
 

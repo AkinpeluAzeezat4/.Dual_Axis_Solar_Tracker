@@ -1,35 +1,66 @@
-#include "sleep_wake/sleep_wake.h"
-#include "esp_sleep.h"
+#include <Arduino.h>
+#include "sleep_wake.h"
+#include "Pins.h"
+#include "button.h"
+#include "posture_logic.h"
+#include "vibration_motor.h"
+#include "buzzer.h"
+#include "led_indicator.h"
 
 namespace sleep_wake
 {
+  static bool sleeping = false;
+  static unsigned long lastActivity = 0;
 
-    bool sleepRequested = false;
-    bool wokeFromDeepSleep = false;
+  static const unsigned long sleepDelay = 300000;
 
-    void begin()
+  void begin()
+  {
+    sleeping = false;
+    lastActivity = millis();
+
+    esp_sleep_enable_ext0_wakeup((gpio_num_t)Pins::USER_BUTTON, 0);
+  }
+
+  void update()
+  {
+    if (button::isPressed())
     {
-        esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-        wokeFromDeepSleep = (cause != ESP_SLEEP_WAKEUP_UNDEFINED);
+      resetActivity();
     }
 
-    void update()
+    if (posture_logic::getState() == posture_logic::BAD_POSTURE ||
+        posture_logic::getState() == posture_logic::ALERTING)
     {
-        if (sleepRequested)
-        {
-            sleepRequested = false;
-            esp_deep_sleep_start();
-        }
+      resetActivity();
     }
 
-    void requestSleep(bool state)
+    if (millis() - lastActivity >= sleepDelay)
     {
-        sleepRequested = state;
+      sleepNow();
     }
+  }
 
-    bool wokeFromSleep()
-    {
-        return wokeFromDeepSleep;
-    }
+  void resetActivity()
+  {
+    lastActivity = millis();
+  }
 
+  void sleepNow()
+  {
+    sleeping = true;
+
+    vibration_motor::setAlert(false);
+    buzzer::setAlert(false);
+    led_indicator::setBreathing(false);
+    led_indicator::setFault(false);
+
+    delay(100);
+    esp_deep_sleep_start();
+  }
+
+  bool isSleeping()
+  {
+    return sleeping;
+  }
 }

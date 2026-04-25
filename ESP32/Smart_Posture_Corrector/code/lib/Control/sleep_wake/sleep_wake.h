@@ -1,17 +1,13 @@
-#ifndef SLEEP_WAKE_H
-#define SLEEP_WAKE_H
-
+#pragma once
 #include <Arduino.h>
 
 namespace sleep_wake
 {
-
   void begin();
   void update();
 
-  void requestSleep(bool state);
-  bool wokeFromSleep();
+  void resetActivity();
+  void sleepNow();
 
+  bool isSleeping();
 }
-
-#endif

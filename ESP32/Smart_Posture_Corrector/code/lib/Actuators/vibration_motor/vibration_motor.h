@@ -1,13 +1,13 @@
 #pragma once
 #include <Arduino.h>
 
-namespace buzzer
+namespace vibration_motor
 {
   void begin();
   void update();
 
   void setAlert(bool state);
-  void beep(uint16_t durationMs);
+  void pulse(uint16_t durationMs);
 
   bool isActive();
 }
