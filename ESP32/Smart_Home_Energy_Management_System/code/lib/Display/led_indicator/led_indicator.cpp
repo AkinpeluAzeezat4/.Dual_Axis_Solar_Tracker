@@ -3,6 +3,7 @@
 
 namespace led_indicator
 {
+
   int ledPin;
   const int pwmChannel = 0;
   const int pwmFreq = 10000;
@@ -20,7 +21,7 @@ namespace led_indicator
   unsigned long pauseStart = 0;
   const int pauseDuration = 1000;
 
-  void begin(uint8_t pin)
+  void begin(int pin)
   {
     ledPin = pin;
 
@@ -81,4 +82,5 @@ namespace led_indicator
 
     ledcWrite(pwmChannel, brightness);
   }
+
 }

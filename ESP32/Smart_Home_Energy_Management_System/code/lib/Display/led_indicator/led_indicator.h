@@ -2,6 +2,6 @@
 
 namespace led_indicator
 {
-  void begin(uint8_t pin);
+  void begin(int pin);
   void update();
 }
