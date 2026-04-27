@@ -1,57 +1,110 @@
-#include "buzzer/buzzer.h"
-#include "Pins.h"
 #include <Arduino.h>
+#include "Pins.h"
 #include "buzzer.h"
 
 namespace buzzer
 {
-  static uint8_t BUZZER_PIN = 255;
-  bool active = false;
-  bool beeping = false;
-  bool alarmRunning = false;
+  static bool active = false;
+  static bool beeping = false;
+  static bool alarmRunning = false;
+  static bool alarmOutput = false;
 
-  unsigned long beepStart = 0;
-  unsigned long beepDuration = 0;
+  static unsigned long beepStart = 0;
+  static unsigned long beepDuration = 0;
+  static unsigned long lastAlarmToggle = 0;
 
-  void begin(uint8_t pin)
+  static const uint16_t alarmOnTime = 180;
+  static const uint16_t alarmOffTime = 180;
+
+  void begin()
   {
-    BUZZER_PIN = pin;
-    pinMode(BUZZER_PIN, OUTPUT);
-    Pins::writePin(BUZZER_PIN, LOW);
+    pinMode(Pins::BUZZER, OUTPUT);
+    off();
   }
 
   void update()
   {
-    if (beeping)
+    unsigned long now = millis();
+
+    if (alarmRunning)
     {
-      if (millis() - beepStart >= beepDuration)
+      uint16_t interval = alarmOutput ? alarmOnTime : alarmOffTime;
+
+      if (now - lastAlarmToggle >= interval)
       {
-        off();
-        beeping = false;
+        lastAlarmToggle = now;
+        alarmOutput = !alarmOutput;
+        active = alarmOutput;
+        Pins::writePin(Pins::BUZZER, alarmOutput);
       }
+
+      return;
+    }
+
+    if (beeping && now - beepStart >= beepDuration)
+    {
+      off();
     }
   }
 
   void on()
   {
+    alarmRunning = false;
+    beeping = false;
+    alarmOutput = true;
     active = true;
-    Pins::writePin(BUZZER_PIN, true);
+    Pins::writePin(Pins::BUZZER, true);
   }
 
   void off()
   {
+    alarmRunning = false;
+    beeping = false;
+    alarmOutput = false;
     active = false;
-    Pins::writePin(BUZZER_PIN, false);
+    Pins::writePin(Pins::BUZZER, false);
   }
 
-  void beep(uint16_t duration_ms)
+  void beep(uint16_t durationMs)
   {
-    if (beeping)
+    if (alarmRunning)
       return;
 
-    beepDuration = duration_ms;
+    beepDuration = durationMs;
     beepStart = millis();
     beeping = true;
-    on();
+    alarmOutput = true;
+    active = true;
+
+    Pins::writePin(Pins::BUZZER, true);
+  }
+
+  void startAlarm()
+  {
+    if (alarmRunning)
+      return;
+
+    alarmRunning = true;
+    beeping = false;
+    alarmOutput = true;
+    active = true;
+    lastAlarmToggle = millis();
+
+    Pins::writePin(Pins::BUZZER, true);
+  }
+
+  void stopAlarm()
+  {
+    off();
+  }
+
+  bool isActive()
+  {
+    return active;
+  }
+
+  bool isAlarmRunning()
+  {
+    return alarmRunning;
   }
 }

@@ -1,6 +1,21 @@
-#pragma once
+#ifndef LOAD_RELAY_H
+#define LOAD_RELAY_H
 
-namespace load_relay {
+#include <Arduino.h>
+
+namespace load_relay
+{
   void begin();
   void update();
+
+  void setOn(bool state);
+  void turnOn();
+  void turnOff();
+
+  bool isOn();
+  bool isFault();
+
+  void clearFault();
 }
+
+#endif

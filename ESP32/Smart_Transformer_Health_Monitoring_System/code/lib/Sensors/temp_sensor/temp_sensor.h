@@ -1,6 +1,15 @@
-#pragma once
+#ifndef TEMP_SENSOR_H
+#define TEMP_SENSOR_H
 
-namespace temp_sensor {
+#include <Arduino.h>
+
+namespace temp_sensor
+{
   void begin();
   void update();
+
+  float getTemperatureC();
+  bool isValid();
 }
+
+#endif

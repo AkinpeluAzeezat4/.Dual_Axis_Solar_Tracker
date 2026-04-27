@@ -1,6 +1,11 @@
-#pragma once
+#ifndef RESET_H
+#define RESET_H
 
-namespace reset {
+namespace reset
+{
   void begin();
   void update();
+  void restart();
 }
+
+#endif

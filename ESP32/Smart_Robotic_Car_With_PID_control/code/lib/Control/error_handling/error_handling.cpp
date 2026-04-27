@@ -1,32 +1,44 @@
+#include <Arduino.h>
+#include <esp_system.h>
 #include "error_handling/error_handling.h"
-#include "esp_system.h"
 
 namespace error_handling
 {
+  static bool watchdogError = false;
+  static bool codeError = false;
 
-    bool watchdogError = false;
-    bool codeError = false;
+  void begin()
+  {
+    esp_reset_reason_t reason = esp_reset_reason();
 
-    void begin()
-    {
-        esp_reset_reason_t reason = esp_reset_reason();
-        watchdogError = (reason == ESP_RST_WDT || reason == ESP_RST_TASK_WDT);
-        codeError = false;
-    }
+    watchdogError =
+        reason == ESP_RST_WDT ||
+        reason == ESP_RST_TASK_WDT;
 
-    void update()
-    {
-        // nothing active here
-    }
+    codeError = false;
+  }
 
-    void setCodeError(bool state)
-    {
-        codeError = state;
-    }
+  void update()
+  {
+  }
 
-    bool hasError()
-    {
-        return watchdogError || codeError;
-    }
+  void setCodeError(bool state)
+  {
+    codeError = state;
+  }
 
+  bool hasError()
+  {
+    return watchdogError || codeError;
+  }
+
+  bool hadWatchdogReset()
+  {
+    return watchdogError;
+  }
+
+  bool hasCodeError()
+  {
+    return codeError;
+  }
 }

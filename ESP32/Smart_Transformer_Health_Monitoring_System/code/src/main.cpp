@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "Pins/Pins.h"
+#include "Pins.h"
 #include "temp_sensor/temp_sensor.h"
 #include "vibration_sensor/vibration_sensor.h"
 #include "button/button.h"
@@ -40,7 +40,7 @@ void loop() {
   buzzer::update();
   load_relay::update();
   current_sensor::update();
- 
+
   WiFi::update();
   lcd_screen::update();
   led_indicator::update();

@@ -5,39 +5,30 @@
 
 namespace Pins
 {
+  extern const uint8_t MOTOR_UART_RX;
+  extern const uint8_t MOTOR_UART_TX;
 
-    // Usable GPIOs for ESP32-WROOM-32
-    extern const uint8_t GPIO0;
-    extern const uint8_t GPIO1;
-    extern const uint8_t GPIO2;
-    extern const uint8_t GPIO3;
-    extern const uint8_t GPIO4;
-    extern const uint8_t GPIO5;
-    extern const uint8_t GPIO12;
-    extern const uint8_t GPIO13;
-    extern const uint8_t GPIO14;
-    extern const uint8_t GPIO15;
-    extern const uint8_t GPIO16;
-    extern const uint8_t GPIO17;
-    extern const uint8_t GPIO18;
-    extern const uint8_t GPIO19;
-    extern const uint8_t GPIO21;
-    extern const uint8_t GPIO22;
-    extern const uint8_t GPIO23;
-    extern const uint8_t GPIO25;
-    extern const uint8_t GPIO26;
-    extern const uint8_t GPIO27;
-    extern const uint8_t GPIO32;
-    extern const uint8_t GPIO33;
-    extern const uint8_t GPIO34; // input only
-    extern const uint8_t GPIO35; // input only
-    extern const uint8_t GPIO36; // input only
-    extern const uint8_t GPIO39; // input only
+  extern const uint8_t I2C_SDA;
+  extern const uint8_t I2C_SCL;
+  extern const uint8_t MPU_INT;
 
-    void begin();
-    int readPin(uint8_t gpio);
-    void writePin(uint8_t gpio, bool value);
+  extern const uint8_t ULTRASONIC_TRIG;
+  extern const uint8_t ULTRASONIC_ECHO;
+  extern const uint8_t SERVO_SIGNAL;
 
+  extern const uint8_t BATTERY_ADC;
+  extern const uint8_t BATTERY_LED1;
+  extern const uint8_t BATTERY_LED2;
+  extern const uint8_t BATTERY_LED3;
+  extern const uint8_t BATTERY_LED4;
+
+  extern const uint8_t POWER_LED;
+
+  void begin();
+  void update();
+
+  int readPin(uint8_t gpio);
+  void writePin(uint8_t gpio, bool value);
 }
 
 #endif

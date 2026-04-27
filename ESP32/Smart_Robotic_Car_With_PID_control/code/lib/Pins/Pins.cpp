@@ -2,47 +2,58 @@
 
 namespace Pins
 {
+  const uint8_t MOTOR_UART_RX = 16;
+  const uint8_t MOTOR_UART_TX = 17;
 
-    const uint8_t GPIO0 = 0;
-    const uint8_t GPIO1 = 1;
-    const uint8_t GPIO2 = 2;
-    const uint8_t GPIO3 = 3;
-    const uint8_t GPIO4 = 4;
-    const uint8_t GPIO5 = 5;
-    const uint8_t GPIO12 = 12;
-    const uint8_t GPIO13 = 13;
-    const uint8_t GPIO14 = 14;
-    const uint8_t GPIO15 = 15;
-    const uint8_t GPIO16 = 16;
-    const uint8_t GPIO17 = 17;
-    const uint8_t GPIO18 = 18;
-    const uint8_t GPIO19 = 19;
-    const uint8_t GPIO21 = 21;
-    const uint8_t GPIO22 = 22;
-    const uint8_t GPIO23 = 23;
-    const uint8_t GPIO25 = 25;
-    const uint8_t GPIO26 = 26;
-    const uint8_t GPIO27 = 27;
-    const uint8_t GPIO32 = 32;
-    const uint8_t GPIO33 = 33;
-    const uint8_t GPIO34 = 34; // input only
-    const uint8_t GPIO35 = 35; // input only
-    const uint8_t GPIO36 = 36; // input only
-    const uint8_t GPIO39 = 39; // input only
+  const uint8_t I2C_SDA = 21;
+  const uint8_t I2C_SCL = 22;
+  const uint8_t MPU_INT = 35;
 
-    void begin()
-    {
-        // Initialize pinModes here pins
-    }
+  const uint8_t ULTRASONIC_TRIG = 27;
+  const uint8_t ULTRASONIC_ECHO = 26;
+  const uint8_t SERVO_SIGNAL = 25;
 
-    int readPin(uint8_t gpio)
-    {
-        return digitalRead(gpio);
-    }
+  const uint8_t BATTERY_ADC = 34;
+  const uint8_t BATTERY_LED1 = 13;
+  const uint8_t BATTERY_LED2 = 14;
+  const uint8_t BATTERY_LED3 = 18;
+  const uint8_t BATTERY_LED4 = 19;
 
-    void writePin(uint8_t gpio, bool value)
-    {
-        digitalWrite(gpio, value ? HIGH : LOW);
-    }
+  const uint8_t POWER_LED = 32;
 
+  void begin()
+  {
+    pinMode(ULTRASONIC_TRIG, OUTPUT);
+    pinMode(ULTRASONIC_ECHO, INPUT);
+    pinMode(MPU_INT, INPUT);
+    pinMode(BATTERY_ADC, INPUT);
+
+    pinMode(BATTERY_LED1, OUTPUT);
+    pinMode(BATTERY_LED2, OUTPUT);
+    pinMode(BATTERY_LED3, OUTPUT);
+    pinMode(BATTERY_LED4, OUTPUT);
+
+    pinMode(POWER_LED, OUTPUT);
+
+    digitalWrite(ULTRASONIC_TRIG, LOW);
+    digitalWrite(BATTERY_LED1, LOW);
+    digitalWrite(BATTERY_LED2, LOW);
+    digitalWrite(BATTERY_LED3, LOW);
+    digitalWrite(BATTERY_LED4, LOW);
+    digitalWrite(POWER_LED, LOW);
+  }
+
+  void update()
+  {
+  }
+
+  int readPin(uint8_t gpio)
+  {
+    return digitalRead(gpio);
+  }
+
+  void writePin(uint8_t gpio, bool value)
+  {
+    digitalWrite(gpio, value ? HIGH : LOW);
+  }
 }

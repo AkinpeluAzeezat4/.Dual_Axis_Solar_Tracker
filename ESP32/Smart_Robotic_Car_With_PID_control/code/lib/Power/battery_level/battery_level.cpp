@@ -1,40 +1,67 @@
 #include <Arduino.h>
 #include "battery_level.h"
+#include "Pins.h"
 
 namespace battery_level
 {
-  static uint8_t batteryPin = 255;
   static float voltage = 0.0f;
-  static float scaleFactor = 1.61f;
-
+  static uint8_t percentage = 0;
   static unsigned long lastReadTime = 0;
+
   static const unsigned long readInterval = 500;
+  static const float adcRef = 3.3f;
+  static const float dividerRatio = 4.0f;
+  static const float minVoltage = 6.4f;
+  static const float maxVoltage = 8.4f;
 
-  void begin(uint8_t pin, float scale)
+  static uint8_t voltageToPercent(float v)
   {
-    batteryPin = pin;
-    scaleFactor = scale;
+    if (v <= minVoltage)
+      return 0;
+    if (v >= maxVoltage)
+      return 100;
+    return (uint8_t)(((v - minVoltage) * 100.0f) / (maxVoltage - minVoltage));
+  }
 
+  void begin()
+  {
     analogReadResolution(12);
-    analogSetPinAttenuation(batteryPin, ADC_11db);
+    analogSetPinAttenuation(Pins::BATTERY_ADC, ADC_11db);
+    update();
   }
 
   void update()
   {
-    unsigned long now = millis();
+    if (millis() - lastReadTime < readInterval)
+      return;
+    lastReadTime = millis();
 
-    if (now - lastReadTime >= readInterval)
+    uint32_t sum = 0;
+
+    for (uint8_t i = 0; i < 20; i++)
     {
-      lastReadTime = now;
-
-      int raw = analogRead(batteryPin);
-      float adcVoltage = (raw / 4095.0f) * 3.3f;
-      voltage = adcVoltage * scaleFactor;
+      sum += analogRead(Pins::BATTERY_ADC);
     }
+
+    float raw = sum / 20.0f;
+    float adcVoltage = (raw / 4095.0f) * adcRef;
+
+    voltage = adcVoltage * dividerRatio;
+    percentage = voltageToPercent(voltage);
   }
 
   float getVoltage()
   {
     return voltage;
+  }
+
+  uint8_t getPercentage()
+  {
+    return percentage;
+  }
+
+  bool isLow()
+  {
+    return percentage <= 20;
   }
 }

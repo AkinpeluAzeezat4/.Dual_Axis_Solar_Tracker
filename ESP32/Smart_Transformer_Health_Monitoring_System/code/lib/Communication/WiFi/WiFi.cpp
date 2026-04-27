@@ -1,12 +1,18 @@
 #include <Arduino.h>
-#include "WiFi.h"
+#include "wifi_manager.h"
 
-namespace WiFi {
+namespace wifi_manager
+{
+  void begin()
+  {
+  }
 
-void begin() {
-}
+  void update()
+  {
+  }
 
-void update() {
-}
-
+  bool isConnected()
+  {
+    return false;
+  }
 }
