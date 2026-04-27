@@ -4,11 +4,10 @@
 namespace battery_level
 {
   static uint8_t batteryPin = 255;
+  static float scaleFactor = 2.0f;
   static float voltage = 0.0f;
-  static float scaleFactor = 1.61f;
-
+  static uint8_t percentage = 0;
   static unsigned long lastReadTime = 0;
-  static const unsigned long readInterval = 500;
 
   void begin(uint8_t pin, float scale)
   {
@@ -21,20 +20,45 @@ namespace battery_level
 
   void update()
   {
-    unsigned long now = millis();
-
-    if (now - lastReadTime >= readInterval)
+    if (millis() - lastReadTime < 1000)
     {
-      lastReadTime = now;
-
-      int raw = analogRead(batteryPin);
-      float adcVoltage = (raw / 4095.0f) * 3.3f;
-      voltage = adcVoltage * scaleFactor;
+      return;
     }
+
+    lastReadTime = millis();
+
+    uint32_t total = 0;
+
+    for (uint8_t i = 0; i < 10; i++)
+    {
+      total += analogRead(batteryPin);
+    }
+
+    float adcVoltage = ((total / 10.0f) / 4095.0f) * 3.3f;
+    voltage = adcVoltage * scaleFactor;
+
+    float pct = ((voltage - 3.2f) / (4.2f - 3.2f)) * 100.0f;
+
+    if (pct < 0)
+    {
+      pct = 0;
+    }
+
+    if (pct > 100)
+    {
+      pct = 100;
+    }
+
+    percentage = (uint8_t)pct;
   }
 
   float getVoltage()
   {
     return voltage;
+  }
+
+  uint8_t getPercentage()
+  {
+    return percentage;
   }
 }

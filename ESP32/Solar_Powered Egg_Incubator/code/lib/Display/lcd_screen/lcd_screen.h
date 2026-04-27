@@ -1,6 +1,18 @@
-#pragma once
+#ifndef LCD_SCREEN_H
+#define LCD_SCREEN_H
 
-namespace lcd_screen {
+#include <Arduino.h>
+
+namespace lcd_screen
+{
   void begin();
   void update();
+
+  void setBacklight(bool state);
+  bool isAwake();
+
+  void wake();
+  void sleep();
 }
+
+#endif

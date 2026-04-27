@@ -1,62 +1,89 @@
 #include <Arduino.h>
-// #include "Pins/Pins.h"
-// #include "temp_hum/temp_hum.h"
-// #include "ultrasonic/ultrasonic.h"
-// #include "button/button.h"
-// #include "buzzer/buzzer.h"
-// #include "fan/fan.h"
-// #include "heater/heater.h"
-// #include "spinner/spinner.h"
-// #include "humidifier/humidifier.h"
-// #include "solar_level/solar_level.h"
-// #include "battery_level/battery_level.h"
+#include <Wire.h>
+#include "Pins.h"
+#include "battery_level/battery_level.h"
+#include "solar_level/solar_level.h"
+#include "ultrasonic/ultrasonic.h"
+#include "rotary_encoder/rotary_encoder.h"
+#include "buzzer/buzzer.h"
+#include "heater/heater.h"
+#include "spinner/spinner.h"
+#include "humidifier/humidifier.h"
+#include "temp_hum/temp_hum.h"
+#include "rtc_clock/rtc_clock.h"
+#include "lcd_screen/lcd_screen.h"
+#include "WiFi/WiFi.h"
+#include "web_dashboard/web_dashboard.h"
+#include "sleep_wake/sleep_wake.h"
+#include "error_handling/error_handling.h"
+#include "reset/reset.h"
 
-// #include "WiFi/WiFi.h"
-// #include "lcd_screen/lcd_screen.h"
-#include "led_indicator/led_indicator.h"
-// #include "sleep_wake/sleep_wake.h"
-// #include "error_handling/error_handling.h"
-// #include "reset/reset.h"
+static unsigned long lastPrint = 0;
 
-void setup() {
-  // Serial.begin(115200);
-  // Pins::begin();
-  // temp_hum::begin();
-  // ultrasonic::begin();
-  // button::begin();
-  // buzzer::begin();
-  // fan::begin();
-  // heater::begin();
-  // spinner::begin();
-  // humidifier::begin();
-  // solar_level::begin();
-  // battery_level::begin();
-
-  // WiFi::begin();
-  // lcd_screen::begin();
-  led_indicator::begin(48);
-  // sleep_wake::begin();
-  // error_handling::begin();
-  // reset::begin();
+void setup()
+{
+  Serial.begin(115200);
+  delay(300);
+  Pins::begin();
+  Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL);
+  battery_level::begin(Pins::BATTERY_LEVEL, 2.0f);
+  solar_level::begin(Pins::SOLAR_LEVEL, 4.0f);
+  ultrasonic::begin(Pins::ULTRASONIC_TRIG, Pins::ULTRASONIC_ECHO);
+  rotary_encoder::begin(Pins::ENCODER_A, Pins::ENCODER_B, Pins::ENCODER_SW);
+  buzzer::begin(Pins::BUZZER);
+  heater::begin(Pins::HEATER_RELAY, true);
+  spinner::begin(Pins::SPINNER_RELAY, true);
+  humidifier::begin(Pins::HUMIDIFIER_RELAY, true);
+  temp_hum::begin();
+  rtc_clock::begin();
+  lcd_screen::begin();
+  wifi_manager::begin();
+  web_dashboard::begin();
+  sleep_wake::begin();
+  error_handling::begin();
+  reset::begin();
+  Serial.println("Solar Powered Egg Incubator Ready");
+  Serial.println("Connect to WiFi AP: Egg_Incubator");
+  Serial.println("Password: 12345678");
+  Serial.println("Dashboard: http://192.168.4.1");
 }
 
-void loop() {
-  // Pins::update();
-  // temp_hum::update();
-  // ultrasonic::update();
-  // button::update();
-  // buzzer::update();
-  // fan::update();
-  // heater::update();
-  // spinner::update();
-  // humidifier::update();
-  // solar_level::update();
-  // battery_level::update();
+void loop()
+{
+  battery_level::update();
+  solar_level::update();
+  ultrasonic::update();
+  rotary_encoder::update();
+  buzzer::update();
+  heater::update();
+  spinner::update();
+  humidifier::update();
+  temp_hum::update();
+  rtc_clock::update();
+  lcd_screen::update();
+  wifi_manager::update();
+  web_dashboard::update();
+  sleep_wake::update();
+  error_handling::update();
+  reset::update();
 
-  // WiFi::update();
-  // lcd_screen::update();
-  led_indicator::update();
-  // sleep_wake::update();
-  // error_handling::update();
-  // reset::update();
+  if (rotary_encoder::wasPressed())
+    buzzer::beep(60, 60, 1);
+
+  if (millis() - lastPrint >= 2000)
+  {
+    lastPrint = millis();
+    Serial.print("T:");
+    Serial.print(temp_hum::getTemperature(), 1);
+    Serial.print(" H:");
+    Serial.print(temp_hum::getHumidity(), 0);
+    Serial.print(" Batt:");
+    Serial.print(battery_level::getVoltage(), 2);
+    Serial.print(" Solar:");
+    Serial.print(solar_level::getVoltage(), 2);
+    Serial.print(" Dist:");
+    Serial.print(ultrasonic::getDistanceCm(), 1);
+    Serial.print(" IP:");
+    Serial.println(wifi_manager::getIp());
+  }
 }

@@ -3,22 +3,24 @@
 
 namespace led_indicator
 {
-  int ledPin;
-  const int pwmChannel = 0;
-  const int pwmFreq = 10000;
-  const int pwmResolution = 8;
+  static uint8_t ledPin = 255;
 
-  int brightness = 0;
-  bool rising = true;
+  static const uint8_t pwmChannel = 0;
+  static const uint16_t pwmFreq = 10000;
+  static const uint8_t pwmResolution = 8;
 
-  unsigned long lastUpdate = 0;
-  const int stepTime = 1;
+  static int brightness = 0;
+  static bool rising = true;
+  static bool enabled = true;
 
-  int pulseCount = 0;
+  static unsigned long lastUpdate = 0;
+  static const unsigned long stepTime = 1;
 
-  bool inPause = false;
-  unsigned long pauseStart = 0;
-  const int pauseDuration = 1000;
+  static int pulseCount = 0;
+
+  static bool inPause = false;
+  static unsigned long pauseStart = 0;
+  static const unsigned long pauseDuration = 1000;
 
   void begin(uint8_t pin)
   {
@@ -26,13 +28,19 @@ namespace led_indicator
 
     ledcSetup(pwmChannel, pwmFreq, pwmResolution);
     ledcAttachPin(ledPin, pwmChannel);
+    ledcWrite(pwmChannel, 0);
   }
 
   void update()
   {
+    if (!enabled)
+    {
+      ledcWrite(pwmChannel, 0);
+      return;
+    }
+
     unsigned long now = millis();
 
-    // handle pause state (non-blocking)
     if (inPause)
     {
       if (now - pauseStart >= pauseDuration)
@@ -46,13 +54,15 @@ namespace led_indicator
     }
 
     if (now - lastUpdate < stepTime)
+    {
       return;
+    }
 
     lastUpdate = now;
 
     if (rising)
     {
-      brightness += 1;
+      brightness++;
 
       if (brightness >= 255)
       {
@@ -62,7 +72,7 @@ namespace led_indicator
     }
     else
     {
-      brightness -= 1;
+      brightness--;
 
       if (brightness <= 0)
       {
@@ -80,5 +90,24 @@ namespace led_indicator
     }
 
     ledcWrite(pwmChannel, brightness);
+  }
+
+  void setEnabled(bool state)
+  {
+    enabled = state;
+
+    if (!enabled)
+    {
+      brightness = 0;
+      rising = true;
+      pulseCount = 0;
+      inPause = false;
+      ledcWrite(pwmChannel, 0);
+    }
+  }
+
+  bool isEnabled()
+  {
+    return enabled;
   }
 }

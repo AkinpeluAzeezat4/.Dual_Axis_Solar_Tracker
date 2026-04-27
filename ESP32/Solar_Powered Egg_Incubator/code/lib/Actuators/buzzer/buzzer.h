@@ -8,15 +8,10 @@ namespace buzzer
   void begin(uint8_t pin);
   void update();
 
-  void on();
-  void off();
-  void beep(uint16_t duration_ms);
-
-  void startAlarm();
-  void stopAlarm();
+  void beep(uint16_t onTime, uint16_t offTime, uint8_t count);
+  void alarm(bool state);
 
   bool isActive();
-  bool isAlarmRunning();
 }
 
 #endif

@@ -1,6 +1,15 @@
-#pragma once
+#ifndef SOLAR_LEVEL_H
+#define SOLAR_LEVEL_H
 
-namespace solar_level {
-  void begin();
+#include <Arduino.h>
+
+namespace solar_level
+{
+  void begin(uint8_t pin, float scale);
   void update();
+
+  float getVoltage();
+  uint8_t getPercentage();
 }
+
+#endif

@@ -1,35 +1,38 @@
-#include "sleep_wake/sleep_wake.h"
-#include "esp_sleep.h"
+#include <Arduino.h>
+#include "sleep_wake.h"
+#include "lcd_screen.h"
 
 namespace sleep_wake
 {
+  static bool wakeFlag = false;
 
-    bool sleepRequested = false;
-    bool wokeFromDeepSleep = false;
+  void begin()
+  {
+    wakeFlag = false;
+  }
 
-    void begin()
+  void update()
+  {
+  }
+
+  void requestSleep(bool state)
+  {
+    if (state)
     {
-        esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-        wokeFromDeepSleep = (cause != ESP_SLEEP_WAKEUP_UNDEFINED);
+      lcd_screen::sleep();
+      wakeFlag = false;
     }
-
-    void update()
+    else
     {
-        if (sleepRequested)
-        {
-            sleepRequested = false;
-            esp_deep_sleep_start();
-        }
+      lcd_screen::wake();
+      wakeFlag = true;
     }
+  }
 
-    void requestSleep(bool state)
-    {
-        sleepRequested = state;
-    }
-
-    bool wokeFromSleep()
-    {
-        return wokeFromDeepSleep;
-    }
-
+  bool wokeFromSleep()
+  {
+    bool state = wakeFlag;
+    wakeFlag = false;
+    return state;
+  }
 }

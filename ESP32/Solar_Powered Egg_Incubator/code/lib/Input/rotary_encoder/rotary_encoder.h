@@ -2,16 +2,19 @@
 #define ROTARY_ENCODER_H
 
 #include <Arduino.h>
-#include "Pins.h"
 
 namespace rotary_encoder
 {
-
-  void begin();
+  void begin(uint8_t pinA, uint8_t pinB, uint8_t pinSW);
   void update();
-  int getPosition();
-  bool isPressed();
 
+  int getPosition();
+  int getDelta();
+
+  bool isPressed();
+  bool wasPressed();
+
+  unsigned long lastActivity();
 }
 
 #endif

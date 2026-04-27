@@ -1,57 +1,114 @@
-#include "buzzer/buzzer.h"
-#include "Pins.h"
 #include <Arduino.h>
 #include "buzzer.h"
 
 namespace buzzer
 {
-  static uint8_t BUZZER_PIN = 255;
-  bool active = false;
-  bool beeping = false;
-  bool alarmRunning = false;
+  static uint8_t buzzerPin = 255;
+  static bool outputState = false;
+  static bool alarmMode = false;
+  static bool sequenceActive = false;
 
-  unsigned long beepStart = 0;
-  unsigned long beepDuration = 0;
+  static uint16_t beepOn = 100;
+  static uint16_t beepOff = 100;
+  static uint8_t targetCount = 0;
+  static uint8_t doneCount = 0;
+
+  static unsigned long lastChange = 0;
+
+  static void setOutput(bool state)
+  {
+    outputState = state;
+
+    if (buzzerPin != 255)
+    {
+      digitalWrite(buzzerPin, state ? HIGH : LOW);
+    }
+  }
 
   void begin(uint8_t pin)
   {
-    BUZZER_PIN = pin;
-    pinMode(BUZZER_PIN, OUTPUT);
-    Pins::writePin(BUZZER_PIN, LOW);
+    buzzerPin = pin;
+    pinMode(buzzerPin, OUTPUT);
+    setOutput(false);
   }
 
   void update()
   {
-    if (beeping)
+    unsigned long now = millis();
+
+    if (alarmMode)
     {
-      if (millis() - beepStart >= beepDuration)
+      if (now - lastChange >= (outputState ? 200 : 300))
       {
-        off();
-        beeping = false;
+        lastChange = now;
+        setOutput(!outputState);
       }
+
+      return;
+    }
+
+    if (!sequenceActive)
+    {
+      return;
+    }
+
+    if (outputState && now - lastChange >= beepOn)
+    {
+      lastChange = now;
+      setOutput(false);
+      doneCount++;
+
+      if (doneCount >= targetCount)
+      {
+        sequenceActive = false;
+      }
+
+      return;
+    }
+
+    if (!outputState && sequenceActive && now - lastChange >= beepOff)
+    {
+      lastChange = now;
+      setOutput(true);
     }
   }
 
-  void on()
+  void beep(uint16_t onTime, uint16_t offTime, uint8_t count)
   {
-    active = true;
-    Pins::writePin(BUZZER_PIN, true);
-  }
-
-  void off()
-  {
-    active = false;
-    Pins::writePin(BUZZER_PIN, false);
-  }
-
-  void beep(uint16_t duration_ms)
-  {
-    if (beeping)
+    if (count == 0)
+    {
+      alarmMode = false;
+      sequenceActive = false;
+      setOutput(false);
       return;
+    }
 
-    beepDuration = duration_ms;
-    beepStart = millis();
-    beeping = true;
-    on();
+    beepOn = onTime;
+    beepOff = offTime;
+    targetCount = count;
+    doneCount = 0;
+
+    alarmMode = false;
+    sequenceActive = true;
+    lastChange = millis();
+
+    setOutput(true);
+  }
+
+  void alarm(bool state)
+  {
+    alarmMode = state;
+    sequenceActive = false;
+    lastChange = millis();
+
+    if (!state)
+    {
+      setOutput(false);
+    }
+  }
+
+  bool isActive()
+  {
+    return alarmMode || sequenceActive || outputState;
   }
 }
