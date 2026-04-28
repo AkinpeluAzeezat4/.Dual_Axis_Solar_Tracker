@@ -15,12 +15,16 @@ namespace battery_level
     batteryPin = pin;
     scaleFactor = scale;
 
+    pinMode(batteryPin, INPUT);
     analogReadResolution(12);
     analogSetPinAttenuation(batteryPin, ADC_11db);
   }
 
   void update()
   {
+    if (batteryPin == 255)
+      return;
+
     unsigned long now = millis();
 
     if (now - lastReadTime >= readInterval)

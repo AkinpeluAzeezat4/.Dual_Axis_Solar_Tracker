@@ -1,38 +1,37 @@
 #include <Arduino.h>
 #include "led_indicator.h"
+#include "Pins.h"
 
 namespace led_indicator
 {
-  int ledPin;
-  const int pwmChannel = 0;
-  const int pwmFreq = 10000;
-  const int pwmResolution = 8;
+  static const uint8_t ledPin = Pins::LED;
+  static const int pwmChannel = 0;
+  static const int pwmFreq = 10000;
+  static const int pwmResolution = 8;
 
-  int brightness = 0;
-  bool rising = true;
+  static int brightness = 0;
+  static bool rising = true;
 
-  unsigned long lastUpdate = 0;
-  const int stepTime = 1;
+  static unsigned long lastUpdate = 0;
+  static const int stepTime = 1;
 
-  int pulseCount = 0;
+  static int pulseCount = 0;
 
-  bool inPause = false;
-  unsigned long pauseStart = 0;
-  const int pauseDuration = 1000;
+  static bool inPause = false;
+  static unsigned long pauseStart = 0;
+  static const int pauseDuration = 1000;
 
-  void begin(uint8_t pin)
+  void begin()
   {
-    ledPin = pin;
-
     ledcSetup(pwmChannel, pwmFreq, pwmResolution);
     ledcAttachPin(ledPin, pwmChannel);
+    ledcWrite(pwmChannel, 0);
   }
 
   void update()
   {
     unsigned long now = millis();
 
-    // handle pause state (non-blocking)
     if (inPause)
     {
       if (now - pauseStart >= pauseDuration)
@@ -52,8 +51,7 @@ namespace led_indicator
 
     if (rising)
     {
-      brightness += 1;
-
+      brightness++;
       if (brightness >= 255)
       {
         brightness = 255;
@@ -62,8 +60,7 @@ namespace led_indicator
     }
     else
     {
-      brightness -= 1;
-
+      brightness--;
       if (brightness <= 0)
       {
         brightness = 0;
@@ -80,5 +77,15 @@ namespace led_indicator
     }
 
     ledcWrite(pwmChannel, brightness);
+  }
+
+  void on()
+  {
+    ledcWrite(pwmChannel, 255);
+  }
+
+  void off()
+  {
+    ledcWrite(pwmChannel, 0);
   }
 }

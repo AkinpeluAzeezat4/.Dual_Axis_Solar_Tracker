@@ -1,47 +1,41 @@
-#include "buzzer/buzzer.h"
-#include "Pins.h"
 #include <Arduino.h>
 #include "buzzer.h"
+#include "Pins.h"
 
 namespace buzzer
 {
-  static uint8_t BUZZER_PIN = 255;
-  bool active = false;
-  bool beeping = false;
-  bool alarmRunning = false;
+  static uint8_t BUZZER_PIN = Pins::BUZZER;
+  static bool active = false;
+  static bool beeping = false;
 
-  unsigned long beepStart = 0;
-  unsigned long beepDuration = 0;
+  static unsigned long beepStart = 0;
+  static unsigned long beepDuration = 0;
 
-  void begin(uint8_t pin)
+  void begin()
   {
-    BUZZER_PIN = pin;
     pinMode(BUZZER_PIN, OUTPUT);
     Pins::writePin(BUZZER_PIN, LOW);
   }
 
   void update()
   {
-    if (beeping)
+    if (beeping && millis() - beepStart >= beepDuration)
     {
-      if (millis() - beepStart >= beepDuration)
-      {
-        off();
-        beeping = false;
-      }
+      off();
+      beeping = false;
     }
   }
 
   void on()
   {
     active = true;
-    Pins::writePin(BUZZER_PIN, true);
+    Pins::writePin(BUZZER_PIN, HIGH);
   }
 
   void off()
   {
     active = false;
-    Pins::writePin(BUZZER_PIN, false);
+    Pins::writePin(BUZZER_PIN, LOW);
   }
 
   void beep(uint16_t duration_ms)
@@ -53,5 +47,10 @@ namespace buzzer
     beepStart = millis();
     beeping = true;
     on();
+  }
+
+  bool isActive()
+  {
+    return active;
   }
 }

@@ -1,12 +1,62 @@
 #include <Arduino.h>
 #include "soil_sensor.h"
+#include "Pins.h"
+#include "settings_manager/settings_manager.h"
 
-namespace soil_sensor {
+namespace soil_sensor
+{
+  static int rawValue = 0;
+  static uint8_t moisturePercent = 0;
+  static unsigned long lastRead = 0;
+  static const unsigned long readInterval = 1000;
 
-void begin() {
-}
+  void begin()
+  {
+    pinMode(Pins::SOIL_SENSOR, INPUT);
+    analogSetPinAttenuation(Pins::SOIL_SENSOR, ADC_11db);
+  }
 
-void update() {
-}
+  void update()
+  {
+    if (millis() - lastRead < readInterval)
+      return;
+    lastRead = millis();
 
+    uint32_t sum = 0;
+    for (uint8_t i = 0; i < 16; i++)
+    {
+      sum += analogRead(Pins::SOIL_SENSOR);
+    }
+
+    rawValue = sum / 16;
+
+    auto &s = settings_manager::get();
+
+    if (s.soilDryRaw == s.soilWetRaw)
+    {
+      moisturePercent = 0;
+      return;
+    }
+
+    int percent = map(rawValue, s.soilDryRaw, s.soilWetRaw, 0, 100);
+    percent = constrain(percent, 0, 100);
+
+    moisturePercent = percent;
+  }
+
+  int getRaw()
+  {
+    return rawValue;
+  }
+
+  uint8_t getMoisturePercent()
+  {
+    return moisturePercent;
+  }
+
+  bool isDry()
+  {
+    auto &s = settings_manager::get();
+    return moisturePercent <= s.soilDryThreshold;
+  }
 }

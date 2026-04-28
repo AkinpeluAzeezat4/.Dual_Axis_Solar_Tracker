@@ -1,43 +1,26 @@
-#ifndef PINS_H
-#define PINS_H
-
+#pragma once
 #include <Arduino.h>
 
 namespace Pins
 {
+  extern const uint8_t ENCODER_CLK;
+  extern const uint8_t ENCODER_DT;
+  extern const uint8_t ENCODER_SW;
+  extern const uint8_t ULTRASONIC_TRIG;
+  extern const uint8_t ULTRASONIC_ECHO;
+  extern const uint8_t TANK_PUMP;
+  extern const uint8_t IRRIGATION_PUMP;
+  extern const uint8_t SOIL_SENSOR;
+  extern const uint8_t BATTERY_SENSE;
+  extern const uint8_t SOLAR_SENSE;
+  extern const uint8_t DHT_DATA;
+  extern const uint8_t OLED_SDA;
+  extern const uint8_t OLED_SCL;
+  extern const uint8_t BUZZER;
+  extern const uint8_t STATUS_LED;
 
-    // Usable GPIOs for ESP32-WROOM-32
-    extern const uint8_t GPIO0;
-    extern const uint8_t GPIO1;
-    extern const uint8_t GPIO2;
-    extern const uint8_t GPIO3;
-    extern const uint8_t GPIO4;
-    extern const uint8_t GPIO5;
-    extern const uint8_t GPIO12;
-    extern const uint8_t GPIO13;
-    extern const uint8_t GPIO14;
-    extern const uint8_t GPIO15;
-    extern const uint8_t GPIO16;
-    extern const uint8_t GPIO17;
-    extern const uint8_t GPIO18;
-    extern const uint8_t GPIO19;
-    extern const uint8_t GPIO21;
-    extern const uint8_t GPIO22;
-    extern const uint8_t GPIO23;
-    extern const uint8_t GPIO25;
-    extern const uint8_t GPIO26;
-    extern const uint8_t GPIO27;
-    extern const uint8_t GPIO32;
-    extern const uint8_t GPIO33;
-    extern const uint8_t GPIO34; // input only
-    extern const uint8_t GPIO35; // input only
-    extern const uint8_t GPIO36; // input only
-    extern const uint8_t GPIO39; // input only
-
-    void begin();
-    int readPin(uint8_t gpio);
-    void writePin(uint8_t gpio, bool value);
-
+  void begin();
+  void update();
+  int readPin(uint8_t gpio);
+  void writePin(uint8_t gpio, bool value);
 }
-
-#endif

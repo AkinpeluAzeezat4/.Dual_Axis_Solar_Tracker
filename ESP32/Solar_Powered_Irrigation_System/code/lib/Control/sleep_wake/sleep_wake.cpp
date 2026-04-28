@@ -1,35 +1,45 @@
-#include "sleep_wake/sleep_wake.h"
-#include "esp_sleep.h"
+#include <Arduino.h>
+#include <esp_sleep.h>
+#include "sleep_wake.h"
+#include "Pins.h"
+#include "pump/pump.h"
 
 namespace sleep_wake
 {
+  static bool sleepRequested = false;
+  static bool wokeFromDeepSleep = false;
 
-    bool sleepRequested = false;
-    bool wokeFromDeepSleep = false;
+  void begin()
+  {
+    pinMode(Pins::ENC_SW, INPUT_PULLUP);
 
-    void begin()
-    {
-        esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-        wokeFromDeepSleep = (cause != ESP_SLEEP_WAKEUP_UNDEFINED);
-    }
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_27, 0);
 
-    void update()
-    {
-        if (sleepRequested)
-        {
-            sleepRequested = false;
-            esp_deep_sleep_start();
-        }
-    }
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    wokeFromDeepSleep = (cause != ESP_SLEEP_WAKEUP_UNDEFINED);
+  }
 
-    void requestSleep(bool state)
-    {
-        sleepRequested = state;
-    }
+  void update()
+  {
+    if (!sleepRequested)
+      return;
 
-    bool wokeFromSleep()
-    {
-        return wokeFromDeepSleep;
-    }
+    sleepRequested = false;
 
+    pump::offTankPump();
+    pump::offIrrigationPump();
+
+    delay(100);
+    esp_deep_sleep_start();
+  }
+
+  void requestSleep(bool state)
+  {
+    sleepRequested = state;
+  }
+
+  bool wokeFromSleep()
+  {
+    return wokeFromDeepSleep;
+  }
 }

@@ -1,14 +1,10 @@
-#ifndef BATTERY_LEVEL_H
-#define BATTERY_LEVEL_H
-
+#pragma once
 #include <Arduino.h>
 
 namespace battery_level
 {
-  void begin(uint8_t pin, float scale = 1.61f);
+  void begin(uint8_t pin, float scale);
   void update();
 
   float getVoltage();
 }
-
-#endif
