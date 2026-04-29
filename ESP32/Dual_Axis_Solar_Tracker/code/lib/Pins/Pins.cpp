@@ -1,6 +1,6 @@
-#include "pins.h"
+#include "Pins.h"
 
-namespace pins
+namespace Pins
 {
   const uint8_t AZ_EN = 25;
   const uint8_t AZ_IN1 = 16;

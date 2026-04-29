@@ -1,5 +1,5 @@
 #include "motor_driver.h"
-#include "pins.h"
+#include "Pins.h"
 #include "sun_sensor/sun_sensor.h"
 #include "rotary_encoder/rotary_encoder.h"
 

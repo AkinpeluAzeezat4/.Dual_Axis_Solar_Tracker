@@ -1,5 +1,5 @@
 #include "rotary_encoder.h"
-#include "pins.h"
+#include "Pins.h"
 
 namespace rotary_encoder
 {

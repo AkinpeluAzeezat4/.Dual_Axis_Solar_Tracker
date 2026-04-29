@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-#include "Pins/Pins.h"
+#include "Pins.h"
 #include "temp_sensor.h"
 
 namespace temp_sensor

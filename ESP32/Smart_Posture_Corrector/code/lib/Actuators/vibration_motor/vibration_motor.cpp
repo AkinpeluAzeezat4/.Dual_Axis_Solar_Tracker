@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "vibrator.h"
+#include "vibration_motor.h"
 #include "Pins.h"
 
 namespace vibration_motor

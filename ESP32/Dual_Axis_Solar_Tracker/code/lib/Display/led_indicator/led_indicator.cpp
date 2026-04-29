@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "led_indicator.h"
-#include "pins.h"
+#include "Pins.h"
 #include "sun_sensor/sun_sensor.h"
 #include "motor_driver/motor_driver.h"
 #include "error_handling/error_handling.h"

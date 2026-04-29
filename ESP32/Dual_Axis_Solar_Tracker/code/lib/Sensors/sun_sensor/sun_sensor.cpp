@@ -1,5 +1,5 @@
 #include "sun_sensor.h"
-#include "pins.h"
+#include "Pins.h"
 #include <Preferences.h>
 
 namespace sun_sensor
