@@ -5,13 +5,16 @@
 
 namespace sleep_wake
 {
-
-  void begin();
+  void begin(unsigned long timeoutMs = 30000);
   void update();
 
-  void requestSleep(bool state);
-  bool wokeFromSleep();
+  void notifyActivity();
+  void wake();
 
+  bool isIdle();
+  bool justEnteredIdle();
+  bool justWoke();
+  unsigned long getIdleTime();
 }
 
 #endif

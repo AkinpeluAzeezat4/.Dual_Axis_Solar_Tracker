@@ -5,8 +5,9 @@
 
 namespace battery_level
 {
-  void begin(uint8_t pin, float scale = 1.61f);
+  void begin(uint8_t pin, float scale = 4.615f);
   void update();
+
   float getVoltage();
   uint8_t getPercentage();
 }

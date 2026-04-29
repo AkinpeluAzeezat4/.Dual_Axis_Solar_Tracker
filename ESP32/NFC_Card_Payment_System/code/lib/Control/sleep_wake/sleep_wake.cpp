@@ -1,35 +1,76 @@
-#include "sleep_wake/sleep_wake.h"
-#include "esp_sleep.h"
+#include <Arduino.h>
+#include "sleep_wake.h"
+
+namespace
+{
+  unsigned long idleTimeout = 30000;
+  unsigned long lastActivityTime = 0;
+
+  bool idleState = false;
+  bool enteredIdleFlag = false;
+  bool wokeFlag = false;
+}
 
 namespace sleep_wake
 {
+  void begin(unsigned long timeoutMs)
+  {
+    idleTimeout = timeoutMs;
+    lastActivityTime = millis();
+    idleState = false;
+    enteredIdleFlag = false;
+    wokeFlag = false;
+  }
 
-    bool sleepRequested = false;
-    bool wokeFromDeepSleep = false;
+  void update()
+  {
+    enteredIdleFlag = false;
+    wokeFlag = false;
 
-    void begin()
+    unsigned long now = millis();
+
+    if (!idleState && (now - lastActivityTime >= idleTimeout))
     {
-        esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
-        wokeFromDeepSleep = (cause != ESP_SLEEP_WAKEUP_UNDEFINED);
+      idleState = true;
+      enteredIdleFlag = true;
     }
+  }
 
-    void update()
+  void notifyActivity()
+  {
+    bool wasIdle = idleState;
+
+    lastActivityTime = millis();
+    idleState = false;
+
+    if (wasIdle)
     {
-        if (sleepRequested)
-        {
-            sleepRequested = false;
-            esp_deep_sleep_start();
-        }
+      wokeFlag = true;
     }
+  }
 
-    void requestSleep(bool state)
-    {
-        sleepRequested = state;
-    }
+  void wake()
+  {
+    notifyActivity();
+  }
 
-    bool wokeFromSleep()
-    {
-        return wokeFromDeepSleep;
-    }
+  bool isIdle()
+  {
+    return idleState;
+  }
 
+  bool justEnteredIdle()
+  {
+    return enteredIdleFlag;
+  }
+
+  bool justWoke()
+  {
+    return wokeFlag;
+  }
+
+  unsigned long getIdleTime()
+  {
+    return millis() - lastActivityTime;
+  }
 }

@@ -5,13 +5,16 @@
 
 namespace error_handling
 {
-
   void begin();
   void update();
 
+  void setSdError(bool state);
+  void setNfcError(bool state);
+  void setRtcError(bool state);
   void setCodeError(bool state);
-  bool hasError();
 
+  bool hasError();
+  String getFirstErrorText();
 }
 
 #endif

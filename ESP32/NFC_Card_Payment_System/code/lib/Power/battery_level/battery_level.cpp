@@ -5,7 +5,7 @@ namespace battery_level
 {
   static uint8_t batteryPin = 255;
   static float voltage = 0.0f;
-  static float scaleFactor = 1.61f;
+  static float scaleFactor = 4.615f;
 
   static unsigned long lastReadTime = 0;
   static const unsigned long readInterval = 500;
@@ -21,6 +21,11 @@ namespace battery_level
 
   void update()
   {
+    if (batteryPin == 255)
+    {
+      return;
+    }
+
     unsigned long now = millis();
 
     if (now - lastReadTime >= readInterval)
@@ -44,6 +49,7 @@ namespace battery_level
 
     if (percent < 0.0f)
       percent = 0.0f;
+
     if (percent > 100.0f)
       percent = 100.0f;
 

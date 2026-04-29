@@ -1,48 +1,46 @@
+#include <Arduino.h>
 #include "Pins.h"
 
 namespace Pins
 {
+  const uint8_t LED_PIN = 48;
 
-    const uint8_t GPIO0 = 0;
-    const uint8_t GPIO1 = 1;
-    const uint8_t GPIO2 = 2;
-    const uint8_t GPIO3 = 3;
-    const uint8_t GPIO4 = 4;
-    const uint8_t GPIO5 = 5;
-    const uint8_t GPIO12 = 12;
-    const uint8_t GPIO13 = 13;
-    const uint8_t GPIO14 = 14;
-    const uint8_t GPIO15 = 15;
-    const uint8_t GPIO16 = 16;
-    const uint8_t GPIO17 = 17;
-    const uint8_t GPIO18 = 18;
-    const uint8_t GPIO19 = 19;
-    const uint8_t GPIO21 = 21;
-    const uint8_t GPIO22 = 22;
-    const uint8_t GPIO23 = 23;
-    const uint8_t GPIO25 = 25;
-    const uint8_t GPIO26 = 26;
-    const uint8_t GPIO27 = 27;
-    const uint8_t GPIO32 = 32;
-    const uint8_t GPIO33 = 33;
-    const uint8_t GPIO34 = 34;
-    const uint8_t GPIO35 = 35;
-    const uint8_t GPIO36 = 36;
-    const uint8_t GPIO39 = 39;
+  const uint8_t BATTERY_ADC_PIN = 1;
 
-    void begin()
-    {
-        // Initialize pinModes here pins
-    }
+  const uint8_t I2C_SDA_PIN = 8;
+  const uint8_t I2C_SCL_PIN = 9;
 
-    int readPin(uint8_t gpio)
-    {
-        return digitalRead(gpio);
-    }
+  const uint8_t SPI_MOSI_PIN = 11;
+  const uint8_t SPI_SCK_PIN = 12;
+  const uint8_t SPI_MISO_PIN = 13;
 
-    void writePin(uint8_t gpio, bool value)
-    {
-        digitalWrite(gpio, value ? HIGH : LOW);
-    }
+  const uint8_t CS1_PIN = 10;
+  const uint8_t CS2_PIN = 15;
+  const uint8_t CS3_PIN = 5;
 
+  const uint8_t NFC_SS_PIN = CS3_PIN;
+  const uint8_t NFC_RST_PIN = 4;
+
+  const uint8_t SD_CS_PIN = CS1_PIN;
+  const uint8_t BUZZER_PIN = CS2_PIN;
+
+  const uint8_t BTN_UP_PIN = 2;
+  const uint8_t BTN_DOWN_PIN = 6;
+  const uint8_t BTN_LEFT_PIN = 7;
+  const uint8_t BTN_RIGHT_PIN = 16;
+  const uint8_t BTN_OK_PIN = 3;
+
+  void begin()
+  {
+  }
+
+  int readPin(uint8_t gpio)
+  {
+    return digitalRead(gpio);
+  }
+
+  void writePin(uint8_t gpio, bool value)
+  {
+    digitalWrite(gpio, value ? HIGH : LOW);
+  }
 }

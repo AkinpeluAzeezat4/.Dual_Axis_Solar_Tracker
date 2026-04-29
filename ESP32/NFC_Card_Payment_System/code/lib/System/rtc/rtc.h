@@ -1,6 +1,15 @@
-#pragma once
+#ifndef RTC_H
+#define RTC_H
 
-namespace rtc {
+#include <Arduino.h>
+
+namespace rtc
+{
   void begin();
   void update();
+
+  bool isReady();
+  String getTimestamp();
 }
+
+#endif

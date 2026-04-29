@@ -9,7 +9,7 @@ namespace
 {
   U8G2_SSD1309_128X64_NONAME0_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
-  static void drawBatteryBar()
+  void drawBatteryBar()
   {
     uint8_t percent = battery_level::getPercentage();
 
@@ -24,80 +24,34 @@ namespace
     uint8_t fillWidth = (percent * (w - 2)) / 100;
     u8g2.drawBox(x + 1, y + 1, fillWidth, h - 2);
   }
-  static void drawWiFiIcon()
+
+  void drawNetworkIcon()
   {
-    uint8_t isConnected = WiFi::isConnected();
     uint8_t x = 102;
     uint8_t y = 1;
+    bool connected = wifi_service::isConnected();
 
-    if (isConnected)
+    u8g2.drawBox(x + 0, y + 4, 2, 1);
+    u8g2.drawBox(x + 3, y + 3, 2, 2);
+
+    if (connected)
     {
-      u8g2.setFont(u8g2_font_04b_03_tr);
-      u8g2.drawFrame(x + 0, y + 4, 2, 1);
-      u8g2.drawFrame(x + 3, y + 3, 2, 2);
-      u8g2.drawFrame(x + 6, y + 2, 2, 3);
-      u8g2.drawFrame(x + 9, y + 1, 2, 4);
+      u8g2.drawBox(x + 6, y + 2, 2, 3);
+      u8g2.drawBox(x + 9, y + 1, 2, 4);
     }
     else
     {
-      u8g2.setFont(u8g2_font_04b_03_tr);
-      u8g2.drawFrame(x + 0, y + 4, 2, 1);
-      u8g2.drawFrame(x + 3, y + 3, 2, 2);
-      u8g2.drawStr(101, 4, "x");
+      u8g2.drawLine(x + 0, y + 5, x + 10, y);
     }
   }
-  static void drawLinkShape(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint8_t r, uint8_t t)
+
+  void drawTopIcons()
   {
-    u8g2.drawRBox(x, y, w, h, r);
-    u8g2.setDrawColor(0);
-    u8g2.drawRBox(x + t, y + t, w - (2 * t), h - (2 * t), (r > t) ? (r - t) : 0);
-    u8g2.setDrawColor(1);
+    drawNetworkIcon();
+    drawBatteryBar();
   }
 
-  static void drawPairingIcon(uint8_t x, uint8_t y, bool paired)
-  {
-    const uint8_t w = 8;
-    const uint8_t h = 5;
-    const uint8_t r = 1;
-    const uint8_t t = 1;
-
-    drawLinkShape(x, y, w, h, r, t);
-    drawLinkShape(x + 4, y + 2, w, h, r, t);
-
-    u8g2.setDrawColor(0);
-    u8g2.drawBox(x + 4, y + 2, 3, 2);
-    u8g2.drawBox(x + 3, y + 3, 3, 2);
-    u8g2.setDrawColor(1);
-
-    if (paired)
-    {
-      u8g2.drawPixel(x + 5, y + 2);
-      u8g2.drawPixel(x + 6, y + 3);
-      u8g2.drawPixel(x + 7, y + 2);
-    }
-    else
-    {
-      if ((millis() / 300) % 2 == 0)
-      {
-        u8g2.drawPixel(x + 11, y + 7);
-        u8g2.drawPixel(x + 13, y + 7);
-      }
-    }
-  }
-}
-
-namespace oled_screen
-{
-  void begin(uint8_t sdaPin, uint8_t sclPin)
-  {
-    Wire.begin(sdaPin, sclPin, 100000);
-    u8g2.setI2CAddress(0x78);
-    u8g2.begin();
-    u8g2.clearBuffer();
-    u8g2.sendBuffer();
-  }
-
-  static void drawTapToPayZoom()
+  void drawTapToPayZoom()
   {
     static unsigned long lastAnimUpdate = 0;
     static uint8_t animStep = 0;
@@ -106,9 +60,10 @@ namespace oled_screen
     {
       lastAnimUpdate = millis();
       animStep++;
-
       if (animStep > 5)
+      {
         animStep = 0;
+      }
     }
 
     const char *text = "TAP TO PAY";
@@ -135,9 +90,7 @@ namespace oled_screen
       textY = 30;
       break;
 
-    case 3:
-    case 4:
-    case 5:
+    default:
       u8g2.setFont(u8g2_font_courB14_tf);
       textX = (128 - u8g2.getStrWidth(text)) / 2;
       textY = 34;
@@ -147,14 +100,60 @@ namespace oled_screen
     u8g2.drawStr(textX, textY, text);
   }
 
+  void drawCenteredRoundedMessage(const char *line1, const char *line2, bool inverted)
+  {
+    uint8_t boxX = 14;
+    uint8_t boxY = 12;
+    uint8_t boxW = 100;
+    uint8_t boxH = 42;
+    uint8_t radius = 4;
+
+    if (inverted)
+    {
+      u8g2.drawRBox(boxX, boxY, boxW, boxH, radius);
+      u8g2.setDrawColor(0);
+    }
+    else
+    {
+      u8g2.drawRFrame(boxX, boxY, boxW, boxH, radius);
+      u8g2.setDrawColor(1);
+    }
+
+    u8g2.setFont(u8g2_font_7x14B_tf);
+
+    int textX1 = boxX + (boxW - u8g2.getStrWidth(line1)) / 2;
+    int textX2 = boxX + (boxW - u8g2.getStrWidth(line2)) / 2;
+
+    u8g2.drawStr(textX1, 31, line1);
+    u8g2.drawStr(textX2, 45, line2);
+
+    u8g2.setDrawColor(1);
+  }
+}
+
+namespace oled_screen
+{
+  void begin(uint8_t sdaPin, uint8_t sclPin)
+  {
+    Wire.begin(sdaPin, sclPin, 100000);
+    u8g2.setI2CAddress(0x78);
+    u8g2.begin();
+    u8g2.clearBuffer();
+    u8g2.sendBuffer();
+  }
+
   void update(const char *command, const char *amount)
   {
     if (command == nullptr)
+    {
       return;
+    }
+
+    u8g2.clearBuffer();
+    drawTopIcons();
 
     if (strcmp(command, "welcome") == 0)
     {
-      u8g2.clearBuffer();
       u8g2.setFont(u8g2_font_6x12_tf);
       u8g2.drawFrame(0, 0, 128, 64);
       u8g2.drawStr(17, 20, "NFC Card Payment");
@@ -176,63 +175,33 @@ namespace oled_screen
         u8g2.drawStr(62, 57, ".");
       if (dots >= 3)
         u8g2.drawStr(68, 57, ".");
-
-      u8g2.sendBuffer();
     }
-
     else if (strcmp(command, "main") == 0)
     {
-    }
-
-    else if (strcmp(command, "settings") == 0)
-    {
-    }
-
-    else if (strcmp(command, "error") == 0)
-    {
-    }
-
-    else if (strcmp(command, "payment_successful") == 0)
-    {
-      u8g2.clearBuffer();
-      drawWiFiIcon();
-      drawBatteryBar();
-      uint8_t boxX = 14;
-      uint8_t boxY = 12;
-      uint8_t boxW = 100;
-      uint8_t boxH = 42;
-      uint8_t radius = 4;
-
-      u8g2.drawRBox(boxX, boxY, boxW, boxH, radius);
-      u8g2.setDrawColor(0);
+      u8g2.setFont(u8g2_font_6x12_tf);
+      u8g2.drawStr(4, 11, "HOME");
+      u8g2.drawLine(0, 14, 127, 14);
 
       u8g2.setFont(u8g2_font_7x14B_tf);
+      u8g2.drawStr(10, 32, "SELECT AMOUNT");
 
-      const char *line1 = "PAYMENT";
-      const char *line2 = "SUCCESSFUL";
+      const char *text = (amount != nullptr) ? amount : "N0";
+      uint8_t boxX = 29;
+      uint8_t boxY = 38;
+      uint8_t boxW = 70;
+      uint8_t boxH = 20;
+      uint8_t radius = 3;
 
-      int textX1 = boxX + (boxW - u8g2.getStrWidth(line1)) / 2;
-      int textX2 = boxX + (boxW - u8g2.getStrWidth(line2)) / 2;
+      u8g2.drawRFrame(boxX, boxY, boxW, boxH, radius);
+      int textX = boxX + (boxW - u8g2.getStrWidth(text)) / 2;
+      u8g2.drawStr(textX, 53, text);
 
-      u8g2.drawStr(textX1, 31, line1);
-      u8g2.drawStr(textX2, 45, line2);
-
-      u8g2.setDrawColor(1);
-      u8g2.sendBuffer();
-    }
-
-    else if (strcmp(command, "payment_failure") == 0)
-    {
+      u8g2.setFont(u8g2_font_5x8_tf);
+      u8g2.drawStr(10, 63, "UP/DOWN: Amt   OK: Pay");
     }
     else if (strcmp(command, "pay") == 0)
     {
-      u8g2.clearBuffer();
-      u8g2.setFont(u8g2_font_courB14_tf);
-
-      drawWiFiIcon();
-      drawBatteryBar();
       drawTapToPayZoom();
-
       u8g2.setFont(u8g2_font_6x12_tf);
 
       static unsigned long lastSwitch = 0;
@@ -255,11 +224,8 @@ namespace oled_screen
 
       if (showAmount && amount != nullptr)
       {
-        char amountText[24];
-        snprintf(amountText, sizeof(amountText), "N%s", amount);
-
-        int textX = boxX + (boxW - u8g2.getStrWidth(amountText)) / 2;
-        u8g2.drawStr(textX, 59, amountText);
+        int textX = boxX + (boxW - u8g2.getStrWidth(amount)) / 2;
+        u8g2.drawStr(textX, 59, amount);
       }
       else
       {
@@ -269,36 +235,42 @@ namespace oled_screen
       }
 
       u8g2.setDrawColor(1);
-      u8g2.sendBuffer();
     }
-    else if (strcmp(command, "test") == 0)
+    else if (strcmp(command, "payment_successful") == 0)
     {
-      u8g2.clearBuffer();
-      drawPairingIcon(60, 0, true);
-      drawWiFiIcon();
-      drawBatteryBar();
-      // uint8_t boxX = 14;
-      // uint8_t boxY = 12;
-      // uint8_t boxW = 100;
-      // uint8_t boxH = 42;
-      // uint8_t radius = 4;
-
-      // u8g2.drawRBox(boxX, boxY, boxW, boxH, radius);
-      // u8g2.setDrawColor(0);
-
-      // u8g2.setFont(u8g2_font_7x14B_tf);
-
-      // const char *line1 = "PAYMENT";
-      // const char *line2 = "SUCCESSFUL";
-
-      // int textX1 = boxX + (boxW - u8g2.getStrWidth(line1)) / 2;
-      // int textX2 = boxX + (boxW - u8g2.getStrWidth(line2)) / 2;
-
-      // u8g2.drawStr(textX1, 31, line1);
-      // u8g2.drawStr(textX2, 45, line2);
-
-      // u8g2.setDrawColor(1);
-      u8g2.sendBuffer();
+      drawCenteredRoundedMessage("PAYMENT", "SUCCESSFUL", true);
     }
+    else if (strcmp(command, "payment_failure") == 0)
+    {
+      drawCenteredRoundedMessage("PAYMENT", "FAILED", false);
+
+      if (amount != nullptr)
+      {
+        u8g2.setFont(u8g2_font_5x8_tf);
+        int x = (128 - u8g2.getStrWidth(amount)) / 2;
+        u8g2.drawStr(x, 61, amount);
+      }
+    }
+    else if (strcmp(command, "register_needed") == 0)
+    {
+      drawCenteredRoundedMessage("CARD NOT", "REGISTERED", false);
+    }
+    else if (strcmp(command, "card_registered") == 0)
+    {
+      drawCenteredRoundedMessage("CARD", "REGISTERED", true);
+    }
+    else if (strcmp(command, "error") == 0)
+    {
+      drawCenteredRoundedMessage("SYSTEM", "FAULT", false);
+
+      if (amount != nullptr)
+      {
+        u8g2.setFont(u8g2_font_5x8_tf);
+        int x = (128 - u8g2.getStrWidth(amount)) / 2;
+        u8g2.drawStr(x, 61, amount);
+      }
+    }
+
+    u8g2.sendBuffer();
   }
 }

@@ -10,13 +10,13 @@ namespace buzzer
 
   void on();
   void off();
-  void beep(uint16_t duration_ms);
+  void beep(uint16_t durationMs);
 
-  void startAlarm();
-  void stopAlarm();
+  void playSuccess();
+  void playFailure();
+  void playRegister();
 
   bool isActive();
-  bool isAlarmRunning();
 }
 
 #endif

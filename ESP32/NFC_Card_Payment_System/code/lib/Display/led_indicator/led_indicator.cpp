@@ -1,7 +1,7 @@
-#include "led_indicator.h"
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <math.h>
+#include "led_indicator.h"
 
 namespace
 {
@@ -38,7 +38,7 @@ namespace led_indicator
 
   void update(const char *command)
   {
-    if (pixel == nullptr)
+    if (pixel == nullptr || command == nullptr)
     {
       return;
     }
@@ -49,17 +49,23 @@ namespace led_indicator
       pixel->show();
       return;
     }
-    else if (strcmp(command, "active") == 0)
+
+    if (strcmp(command, "active") == 0)
     {
       pixel->setPixelColor(0, pixel->Color(0, 0, 255));
       pixel->show();
       return;
     }
-    else if (strcmp(command, "normal") == 0)
+
+    if (strcmp(command, "off") == 0)
     {
-      uint8_t level = getBreathingLevel();
-      pixel->setPixelColor(0, pixel->Color(0, level, 0));
+      pixel->clear();
       pixel->show();
+      return;
     }
+
+    uint8_t level = getBreathingLevel();
+    pixel->setPixelColor(0, pixel->Color(0, level, 0));
+    pixel->show();
   }
 }

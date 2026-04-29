@@ -844,7 +844,7 @@
       {
         "filename": "NFC_Card_Payment_System.kicad_sch",
         "name": "NFC_Card_Payment_System",
-        "uuid": "00000000-0000-0000-0000-000000000000"
+        "uuid": "2b1e59c7-deae-4a9d-808e-a18b06d7d244"
       }
     ],
     "used_designators": "",
@@ -853,7 +853,7 @@
   "sheets": [
     [
       "2b1e59c7-deae-4a9d-808e-a18b06d7d244",
-      "Root"
+      "NFC_Card_Payment_System"
     ]
   ],
   "text_variables": {},
