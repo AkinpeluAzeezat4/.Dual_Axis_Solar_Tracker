@@ -5,8 +5,8 @@ namespace Pins
   const uint8_t ENCODER_CLK = 25;
   const uint8_t ENCODER_DT = 26;
   const uint8_t ENCODER_SW = 27;
-  const uint8_t ULTRASONIC_TRIG = 18;
-  const uint8_t ULTRASONIC_ECHO = 19;
+  const uint8_t ULTRASONIC_TRIG = 14;
+  const uint8_t ULTRASONIC_ECHO = 12;
   const uint8_t TANK_PUMP = 33;
   const uint8_t IRRIGATION_PUMP = 16;
   const uint8_t SOIL_SENSOR = 34;
@@ -15,7 +15,7 @@ namespace Pins
   const uint8_t DHT_DATA = 32;
   const uint8_t OLED_SDA = 21;
   const uint8_t OLED_SCL = 22;
-  const uint8_t BUZZER = 23;
+  const uint8_t BUZZER = 4;
   const uint8_t STATUS_LED = 2;
 
   void begin()
