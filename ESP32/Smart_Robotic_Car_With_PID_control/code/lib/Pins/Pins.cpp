@@ -16,8 +16,8 @@ namespace Pins
   const uint8_t BATTERY_ADC = 34;
   const uint8_t BATTERY_LED1 = 13;
   const uint8_t BATTERY_LED2 = 14;
-  const uint8_t BATTERY_LED3 = 18;
-  const uint8_t BATTERY_LED4 = 19;
+  const uint8_t BATTERY_LED3 = 19;
+  const uint8_t BATTERY_LED4 = 18;
 
   const uint8_t POWER_LED = 32;
 
