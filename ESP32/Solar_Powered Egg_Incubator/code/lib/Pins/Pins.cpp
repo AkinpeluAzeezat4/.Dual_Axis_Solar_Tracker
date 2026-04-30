@@ -15,6 +15,9 @@ namespace Pins
 
   const uint8_t BUZZER = 4;
 
+  const uint8_t FAN = 5;
+  const uint8_t STATUS_LED = 2;
+
   const uint8_t HEATER_RELAY = 16;
   const uint8_t SPINNER_RELAY = 17;
   const uint8_t HUMIDIFIER_RELAY = 18;
@@ -39,11 +42,16 @@ namespace Pins
     pinMode(ENCODER_SW, INPUT_PULLUP);
 
     pinMode(BUZZER, OUTPUT);
+    pinMode(FAN, OUTPUT);
+    pinMode(STATUS_LED, OUTPUT);
 
     pinMode(HEATER_RELAY, OUTPUT);
     pinMode(SPINNER_RELAY, OUTPUT);
     pinMode(HUMIDIFIER_RELAY, OUTPUT);
-
+ 
+    
+    digitalWrite(STATUS_LED, LOW);
+    digitalWrite(FAN, LOW);
     digitalWrite(ULTRASONIC_TRIG, LOW);
     digitalWrite(BUZZER, LOW);
 
