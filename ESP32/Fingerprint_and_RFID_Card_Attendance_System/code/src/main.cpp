@@ -1,52 +1,87 @@
 #include <Arduino.h>
-#include "Pins/Pins.h"
-#include "fingerprint/fingerprint.h"
-#include "RFID/RFID.h"
-#include "buttons/buttons.h"
-#include "buzzer/buzzer.h"
-#include "battery_level/battery_level.h"
-#include "WiFi/WiFi.h"
+#include "Pins.h"
 #include "oled_screen/oled_screen.h"
-#include "led_indicator/led_indicator.h"
-#include "sd_card/sd_card.h"
-#include "sleep_wake/sleep_wake.h"
-#include "error_handling/error_handling.h"
-#include "reset/reset.h"
+#include "buzzer/buzzer.h"
 #include "rtc/rtc.h"
+#include "sd_card/sd_card.h"
+#include "RFID/RFID.h"
+#include "fingerprint/fingerprint.h"
+#include "buttons/buttons.h"
+#include "battery_level/battery_level.h"
+#include "led_indicator/led_indicator.h"
+#include "error_handling/error_handling.h"
+#include "sleep_wake/sleep_wake.h"
+#include "reset/reset.h"
+#include "WiFi/wifi_manager.h"
+#include "local_server/local_server.h"
+#include "attendance_manager/attendance_manager.h"
+#include "keyboard_input/keyboard_input.h"
 
 void setup()
 {
   Serial.begin(115200);
+  delay(500);
+
   Pins::begin();
-  fingerprint::begin();
-  RFID::begin();
-  buttons::begin();
-  buzzer::begin();
-  battery_level::begin();
-  WiFi::begin();
+
   oled_screen::begin();
-  led_indicator::begin();
-  sd_card::begin();
-  sleep_wake::begin();
+  oled_screen::showBoot();
+
+  buzzer::begin(Pins::BUZZER_PIN);
+
+  led_indicator::begin(Pins::STATUS_LED);
+  led_indicator::setMode(led_indicator::BREATHING);
+
   error_handling::begin();
+  sleep_wake::begin();
   reset::begin();
+
   rtc::begin();
+  sd_card::begin();
+
+  buttons::begin();
+  battery_level::begin(Pins::BATTERY_ADC, Pins::BATTERY_SCALE);
+
+  RFID::begin();
+  fingerprint::begin();
+
+  wifi_manager::begin();
+  attendance_manager::begin();
+  local_server::begin();
+  keyboard_input::begin();
+
+  oled_screen::show("System Ready", "Tap card first", "Then fingerprint", "Web: " + wifi_manager::getIpString());
+
+  Serial.println();
+  Serial.println("Fingerprint RFID Attendance System Prototype");
+  Serial.println("Two-way authentication: RFID card + fingerprint");
+  Serial.println("AP SSID: " + wifi_manager::getSSID());
+  Serial.println("AP PASS: " + wifi_manager::getPassword());
+  Serial.println("Web URL: http://" + wifi_manager::getIpString());
 }
 
 void loop()
 {
   Pins::update();
-  fingerprint::update();
-  RFID::update();
+
+  rtc::update();
   buttons::update();
-  buzzer::update();
   battery_level::update();
-  WiFi::update();
-  oled_screen::update();
+
+  RFID::update();
+  fingerprint::update();
+  attendance_manager::update();
+
+  wifi_manager::update();
+  local_server::update();
+  keyboard_input::update();
+
+  buzzer::update();
   led_indicator::update();
+  oled_screen::update();
   sd_card::update();
+
   sleep_wake::update();
   error_handling::update();
   reset::update();
-  rtc::update();
 }

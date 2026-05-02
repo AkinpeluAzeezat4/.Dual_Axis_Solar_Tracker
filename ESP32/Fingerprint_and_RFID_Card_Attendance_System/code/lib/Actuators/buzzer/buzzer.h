@@ -5,12 +5,15 @@
 
 namespace buzzer
 {
-  void begin(uint8_t pin);
+  void begin(uint8_t buzzerPin);
   void update();
 
   void on();
   void off();
-  void beep(uint16_t duration_ms);
+
+  void beep(uint16_t durationMs = 100);
+  void doubleBeep();
+  void errorBeep();
 
   void startAlarm();
   void stopAlarm();

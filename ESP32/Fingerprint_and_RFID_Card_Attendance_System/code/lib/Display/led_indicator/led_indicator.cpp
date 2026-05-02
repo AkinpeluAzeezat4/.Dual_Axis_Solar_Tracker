@@ -1,84 +1,133 @@
 #include <Arduino.h>
 #include "led_indicator.h"
+#include "Pins/Pins.h"
 
 namespace led_indicator
 {
-  int ledPin;
-  const int pwmChannel = 0;
-  const int pwmFreq = 10000;
-  const int pwmResolution = 8;
+  static uint8_t pin = Pins::UNUSED_PIN;
+  static Mode currentMode = OFF;
 
-  int brightness = 0;
-  bool rising = true;
+  static const int pwmChannel = 0;
+  static const int pwmFreq = 5000;
+  static const int pwmResolution = 8;
 
-  unsigned long lastUpdate = 0;
-  const int stepTime = 1;
+  static int brightness = 0;
+  static bool rising = true;
+  static unsigned long lastUpdate = 0;
+  static bool ledState = false;
 
-  int pulseCount = 0;
-
-  bool inPause = false;
-  unsigned long pauseStart = 0;
-  const int pauseDuration = 1000;
-
-  void begin(uint8_t pin)
+  void begin(uint8_t ledPin)
   {
-    ledPin = pin;
+    pin = ledPin;
+
+    if (!Pins::valid(pin))
+      return;
 
     ledcSetup(pwmChannel, pwmFreq, pwmResolution);
-    ledcAttachPin(ledPin, pwmChannel);
+    ledcAttachPin(pin, pwmChannel);
+    ledcWrite(pwmChannel, 0);
+
+    currentMode = OFF;
+    brightness = 0;
+    rising = true;
+    ledState = false;
+    lastUpdate = millis();
   }
 
   void update()
   {
-    unsigned long now = millis();
-
-    // handle pause state (non-blocking)
-    if (inPause)
-    {
-      if (now - pauseStart >= pauseDuration)
-      {
-        inPause = false;
-      }
-      else
-      {
-        return;
-      }
-    }
-
-    if (now - lastUpdate < stepTime)
+    if (!Pins::valid(pin))
       return;
 
-    lastUpdate = now;
+    unsigned long now = millis();
 
-    if (rising)
+    if (currentMode == OFF)
     {
-      brightness += 1;
+      ledcWrite(pwmChannel, 0);
+      return;
+    }
+
+    if (currentMode == ON)
+    {
+      ledcWrite(pwmChannel, 255);
+      return;
+    }
+
+    if (currentMode == BREATHING)
+    {
+      if (now - lastUpdate < 8)
+        return;
+
+      lastUpdate = now;
+
+      brightness += rising ? 4 : -4;
 
       if (brightness >= 255)
       {
         brightness = 255;
         rising = false;
       }
-    }
-    else
-    {
-      brightness -= 1;
 
       if (brightness <= 0)
       {
         brightness = 0;
         rising = true;
-        pulseCount++;
-
-        if (pulseCount >= 2)
-        {
-          pulseCount = 0;
-          inPause = true;
-          pauseStart = now;
-        }
       }
+
+      ledcWrite(pwmChannel, brightness);
+      return;
     }
 
-    ledcWrite(pwmChannel, brightness);
+    unsigned long interval = currentMode == BLINK_FAST ? 150 : 700;
+
+    if (now - lastUpdate >= interval)
+    {
+      lastUpdate = now;
+      ledState = !ledState;
+      ledcWrite(pwmChannel, ledState ? 255 : 0);
+    }
+  }
+
+  void setMode(Mode mode)
+  {
+    currentMode = mode;
+    lastUpdate = millis();
+
+    if (!Pins::valid(pin))
+      return;
+
+    if (mode == BREATHING)
+    {
+      brightness = 0;
+      rising = true;
+      ledcWrite(pwmChannel, 0);
+    }
+
+    if (mode == BLINK_FAST || mode == BLINK_SLOW)
+    {
+      ledState = false;
+      ledcWrite(pwmChannel, 0);
+    }
+
+    if (mode == OFF)
+      ledcWrite(pwmChannel, 0);
+
+    if (mode == ON)
+      ledcWrite(pwmChannel, 255);
+  }
+
+  Mode getMode()
+  {
+    return currentMode;
+  }
+
+  void off()
+  {
+    setMode(OFF);
+  }
+
+  void on()
+  {
+    setMode(ON);
   }
 }

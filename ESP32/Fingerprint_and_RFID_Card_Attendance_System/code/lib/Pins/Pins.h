@@ -5,39 +5,47 @@
 
 namespace Pins
 {
+  static const uint8_t UNUSED_PIN = 255;
 
-    // Usable GPIOs for ESP32-WROOM-32
-    extern const uint8_t GPIO0;
-    extern const uint8_t GPIO1;
-    extern const uint8_t GPIO2;
-    extern const uint8_t GPIO3;
-    extern const uint8_t GPIO4;
-    extern const uint8_t GPIO5;
-    extern const uint8_t GPIO12;
-    extern const uint8_t GPIO13;
-    extern const uint8_t GPIO14;
-    extern const uint8_t GPIO15;
-    extern const uint8_t GPIO16;
-    extern const uint8_t GPIO17;
-    extern const uint8_t GPIO18;
-    extern const uint8_t GPIO19;
-    extern const uint8_t GPIO21;
-    extern const uint8_t GPIO22;
-    extern const uint8_t GPIO23;
-    extern const uint8_t GPIO25;
-    extern const uint8_t GPIO26;
-    extern const uint8_t GPIO27;
-    extern const uint8_t GPIO32;
-    extern const uint8_t GPIO33;
-    extern const uint8_t GPIO34; // input only
-    extern const uint8_t GPIO35; // input only
-    extern const uint8_t GPIO36; // input only
-    extern const uint8_t GPIO39; // input only
+  static const uint8_t I2C_SDA = 8;
+  static const uint8_t I2C_SCL = 9;
 
-    void begin();
-    int readPin(uint8_t gpio);
-    void writePin(uint8_t gpio, bool value);
+  static const uint8_t SHARED_MOSI = 11;
+  static const uint8_t SHARED_SCK = 12;
+  static const uint8_t SHARED_MISO = 13;
 
+  static const uint8_t RC522_SS = 10;
+  static const uint8_t RC522_RST = 4;
+
+  static const uint8_t SD_CARD_CS = 15;
+  static const uint8_t BUZZER_PIN = 5;
+
+  static const uint8_t FINGERPRINT_TX = 17;
+  static const uint8_t FINGERPRINT_RX = 18;
+
+  static const uint8_t BTN1 = 1;
+  static const uint8_t BTN2 = 6;
+  static const uint8_t BTN3 = 7;
+  static const uint8_t BTN4 = 16;
+  static const uint8_t BTN5 = 3;
+
+  static const uint8_t BATTERY_ADC = 2;
+  static constexpr float BATTERY_SCALE = 2.0f;
+
+  static const uint8_t USB_D_MINUS = 19;
+  static const uint8_t USB_D_PLUS = 20;
+
+  static const uint8_t STATUS_LED = UNUSED_PIN;
+
+  void begin();
+  void update();
+
+  bool valid(uint8_t gpio);
+
+  int readPin(uint8_t gpio);
+  int readAnalog(uint8_t gpio);
+
+  void writePin(uint8_t gpio, bool value);
 }
 
 #endif

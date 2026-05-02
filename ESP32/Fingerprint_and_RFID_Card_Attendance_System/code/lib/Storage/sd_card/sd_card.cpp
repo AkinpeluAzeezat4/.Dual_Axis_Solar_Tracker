@@ -1,12 +1,364 @@
 #include <Arduino.h>
+#include <SPI.h>
+#include <SD.h>
 #include "sd_card.h"
+#include "Pins.h"
 
-namespace sd_card {
+namespace sd_card
+{
+  static bool ready = false;
 
-void begin() {
-}
+  static const char *configPath = "/config.txt";
+  static const char *usersPath = "/users.csv";
+  static const char *attendancePath = "/attendance.csv";
 
-void update() {
-}
+  static String trimValue(String value)
+  {
+    value.trim();
+    return value;
+  }
 
+  static String csvPart(const String &line, uint8_t index)
+  {
+    int start = 0;
+    uint8_t current = 0;
+
+    for (uint16_t i = 0; i <= line.length(); i++)
+    {
+      if (i == line.length() || line[i] == ',')
+      {
+        if (current == index)
+        {
+          String part = line.substring(start, i);
+          part.trim();
+          return part;
+        }
+
+        start = i + 1;
+        current++;
+      }
+    }
+
+    return "";
+  }
+
+  void begin()
+  {
+    SPI.begin(Pins::SHARED_SCK, Pins::SHARED_MISO, Pins::SHARED_MOSI);
+
+    pinMode(Pins::RC522_SS, OUTPUT);
+    digitalWrite(Pins::RC522_SS, HIGH);
+
+    pinMode(Pins::SD_CARD_CS, OUTPUT);
+    digitalWrite(Pins::SD_CARD_CS, HIGH);
+
+    ready = SD.begin(Pins::SD_CARD_CS, SPI, 4000000);
+
+    if (!ready)
+      return;
+
+    ensureFile(configPath,
+               "system_name=Fingerprint RFID Attendance System\n"
+               "workspace_name=Prototype Workspace\n"
+               "workspace_type=school\n"
+               "ap_ssid=AttendanceSystem\n"
+               "ap_password=12345678\n"
+               "default_mode=IN\n");
+
+    ensureFile(usersPath, "user_id,name,workspace,rfid_uid,fingerprint_id,active,created_at\n");
+    ensureFile(attendancePath, "timestamp,user_id,name,method,direction,workspace,credential,record_hash\n");
+  }
+
+  void update()
+  {
+  }
+
+  bool isReady()
+  {
+    return ready;
+  }
+
+  bool appendLine(const String &path, const String &line)
+  {
+    if (!ready)
+      return false;
+
+    File file = SD.open(path, FILE_APPEND);
+
+    if (!file)
+      return false;
+
+    file.println(line);
+    file.close();
+
+    return true;
+  }
+
+  bool writeFile(const String &path, const String &content)
+  {
+    if (!ready)
+      return false;
+
+    if (SD.exists(path))
+      SD.remove(path);
+
+    File file = SD.open(path, FILE_WRITE);
+
+    if (!file)
+      return false;
+
+    file.print(content);
+    file.close();
+
+    return true;
+  }
+
+  bool ensureFile(const String &path, const String &header)
+  {
+    if (!ready)
+      return false;
+
+    if (SD.exists(path))
+      return true;
+
+    File file = SD.open(path, FILE_WRITE);
+
+    if (!file)
+      return false;
+
+    file.print(header);
+    file.close();
+
+    return true;
+  }
+
+  String readFile(const String &path, size_t maxBytes)
+  {
+    String data;
+
+    if (!ready)
+      return data;
+
+    File file = SD.open(path, FILE_READ);
+
+    if (!file)
+      return data;
+
+    while (file.available() && data.length() < maxBytes)
+      data += (char)file.read();
+
+    file.close();
+
+    return data;
+  }
+
+  String getConfigValue(const String &key, const String &fallback)
+  {
+    if (!ready)
+      return fallback;
+
+    File file = SD.open(configPath, FILE_READ);
+
+    if (!file)
+      return fallback;
+
+    while (file.available())
+    {
+      String line = file.readStringUntil('\n');
+      line.trim();
+
+      if (line.length() == 0 || line.startsWith("#"))
+        continue;
+
+      int split = line.indexOf('=');
+
+      if (split <= 0)
+        continue;
+
+      String k = trimValue(line.substring(0, split));
+      String v = trimValue(line.substring(split + 1));
+
+      if (k == key)
+      {
+        file.close();
+        return v.length() ? v : fallback;
+      }
+    }
+
+    file.close();
+
+    return fallback;
+  }
+
+  uint32_t countDataLines(const String &path)
+  {
+    if (!ready)
+      return 0;
+
+    File file = SD.open(path, FILE_READ);
+
+    if (!file)
+      return 0;
+
+    uint32_t lines = 0;
+    bool first = true;
+
+    while (file.available())
+    {
+      String line = file.readStringUntil('\n');
+      line.trim();
+
+      if (line.length() == 0)
+        continue;
+
+      if (first)
+      {
+        first = false;
+        continue;
+      }
+
+      lines++;
+    }
+
+    file.close();
+
+    return lines;
+  }
+
+  bool clearAttendance()
+  {
+    return writeFile(attendancePath, "timestamp,user_id,name,method,direction,workspace,credential,record_hash\n");
+  }
+
+  uint16_t getUserFingerId(const String &userId)
+  {
+    if (!ready)
+      return 0;
+
+    String cleanId = userId;
+    cleanId.trim();
+
+    if (cleanId.length() == 0)
+      return 0;
+
+    File file = SD.open(usersPath, FILE_READ);
+
+    if (!file)
+      return 0;
+
+    while (file.available())
+    {
+      String line = file.readStringUntil('\n');
+      line.trim();
+
+      if (line.length() == 0)
+        continue;
+
+      if (line.startsWith("user_id"))
+        continue;
+
+      String id = csvPart(line, 0);
+
+      if (id == cleanId)
+      {
+        String fingerText = csvPart(line, 4);
+        file.close();
+        return fingerText.toInt();
+      }
+    }
+
+    file.close();
+
+    return 0;
+  }
+
+  bool deleteUser(const String &userId)
+  {
+    if (!ready)
+      return false;
+
+    String cleanId = userId;
+    cleanId.trim();
+
+    if (cleanId.length() == 0)
+      return false;
+
+    if (!SD.exists(usersPath))
+      return false;
+
+    File source = SD.open(usersPath, FILE_READ);
+
+    if (!source)
+      return false;
+
+    if (SD.exists("/users_tmp.csv"))
+      SD.remove("/users_tmp.csv");
+
+    File temp = SD.open("/users_tmp.csv", FILE_WRITE);
+
+    if (!temp)
+    {
+      source.close();
+      return false;
+    }
+
+    bool deleted = false;
+
+    while (source.available())
+    {
+      String line = source.readStringUntil('\n');
+      line.trim();
+
+      if (line.length() == 0)
+        continue;
+
+      if (line.startsWith("user_id"))
+      {
+        temp.println(line);
+        continue;
+      }
+
+      String id = csvPart(line, 0);
+
+      if (id == cleanId)
+      {
+        deleted = true;
+        continue;
+      }
+
+      temp.println(line);
+    }
+
+    source.close();
+    temp.close();
+
+    if (!deleted)
+    {
+      SD.remove("/users_tmp.csv");
+      return false;
+    }
+
+    SD.remove(usersPath);
+
+    if (!SD.rename("/users_tmp.csv", usersPath))
+      return false;
+
+    return true;
+  }
+
+  uint64_t totalBytes()
+  {
+    if (!ready)
+      return 0;
+
+    return SD.totalBytes();
+  }
+
+  uint64_t usedBytes()
+  {
+    if (!ready)
+      return 0;
+
+    return SD.usedBytes();
+  }
 }
