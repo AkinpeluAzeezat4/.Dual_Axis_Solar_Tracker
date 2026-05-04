@@ -3,11 +3,11 @@
 
 namespace sleep_wake
 {
-  void begin();
-  void update();
+    void begin();
+    void update();
 
-  void requestSleep(bool state);
-  bool wokeFromSleep();
+    void requestSleep(bool state);
+    bool wokeFromSleep();
 }
 
 #endif

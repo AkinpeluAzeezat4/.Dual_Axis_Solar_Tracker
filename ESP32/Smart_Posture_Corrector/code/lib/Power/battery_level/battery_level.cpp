@@ -38,6 +38,7 @@ namespace battery_level
 
     float raw = sum / 20.0f;
     voltage = (raw * adcRef / adcMax) * dividerRatio;
+    Serial.println(voltage);
     percentage = voltageToPercent(voltage);
   }
 

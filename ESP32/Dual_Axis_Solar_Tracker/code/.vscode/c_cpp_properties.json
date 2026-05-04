@@ -9,7 +9,6 @@
             "name": "PlatformIO",
             "includePath": [
                 "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/src",
-                "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/System",
                 "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/Display",
                 "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/Control",
                 "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/Drivers",
@@ -207,6 +206,7 @@
                 "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/tools/sdk/esp32/dio_qspi/include",
                 "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/cores/esp32",
                 "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/variants/esp32",
+                "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/System",
                 "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/libraries/ArduinoOTA/src",
                 "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/libraries/AsyncUDP/src",
                 "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/libraries/BLE/src",
@@ -245,7 +245,6 @@
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
                     "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/src",
-                    "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/System",
                     "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/Display",
                     "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/Control",
                     "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/Drivers",
@@ -443,6 +442,7 @@
                     "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/tools/sdk/esp32/dio_qspi/include",
                     "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/cores/esp32",
                     "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/variants/esp32",
+                    "c:/Users/JSI Tech/Documents/My Kicad File/Github/Projects/ESP32/Dual_Axis_Solar_Tracker/code/lib/System",
                     "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/libraries/ArduinoOTA/src",
                     "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/libraries/AsyncUDP/src",
                     "C:/Users/JSI Tech/.platformio/packages/framework-arduinoespressif32@3.20014.231204/libraries/BLE/src",

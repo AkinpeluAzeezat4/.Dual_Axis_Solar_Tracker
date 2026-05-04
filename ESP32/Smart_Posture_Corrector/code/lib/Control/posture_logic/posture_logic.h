@@ -16,6 +16,7 @@ namespace posture_logic
   void update();
 
   void requestCalibration();
+  void clearSavedCalibration();
 
   void setMuted(bool stateValue);
   bool isMuted();
@@ -23,6 +24,8 @@ namespace posture_logic
   State getState();
   float getBaselinePitch();
   float getPitchError();
+
+  bool hasSavedCalibration();
 
   const char *getStateText();
 }

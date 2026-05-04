@@ -3,9 +3,9 @@
 
 namespace reset
 {
-  void begin();
-  void update();
-  void restart();
+    void begin();
+    void update();
+    void restart();
 }
 
 #endif

@@ -12,7 +12,6 @@ namespace sun_sensor
     int bottomLeft;
     int bottomRight;
     int night;
-    int pot;
 
     int leftAverage;
     int rightAverage;

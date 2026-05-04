@@ -5,11 +5,13 @@
 
 namespace ultrasonic
 {
-  void begin();
-  void update();
+    void begin();
+    void update();
 
-  float getDistanceCm();
-  bool isObstacle(uint16_t thresholdCm);
+    float getDistanceCm();
+    unsigned long getLastValidMs();
+    bool isObstacle(uint16_t thresholdCm);
+    bool hasFreshReading(uint16_t maxAgeMs = 250);
 }
 
 #endif

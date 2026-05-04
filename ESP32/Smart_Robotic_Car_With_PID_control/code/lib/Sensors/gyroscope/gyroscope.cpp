@@ -1,80 +1,183 @@
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_MPU6050.h>
-#include <Adafruit_Sensor.h>
+#include <math.h>
 #include "gyroscope.h"
 #include "Pins.h"
 
 namespace gyroscope
 {
-  static Adafruit_MPU6050 mpu;
-  static Data data;
-  static volatile bool intFlag = false;
-  static unsigned long lastRead = 0;
+    static const uint8_t MPU_ADDR = 0x68;
 
-  static void IRAM_ATTR onMpuInterrupt()
-  {
-    intFlag = true;
-  }
+    static Data data;
+    static volatile bool mpuInterruptFlag = false;
 
-  void begin()
-  {
-    Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL);
+    static unsigned long lastRead = 0;
+    static unsigned long lastDtTime = 0;
+    static const unsigned long updateInterval = 20;
 
-    data.ready = mpu.begin(0x68, &Wire);
-    if (!data.ready)
-      return;
+    static float yawAngle = 0.0f;
+    static float lastAccelerationMagnitude = 1.0f;
 
-    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
-    mpu.setGyroRange(MPU6050_RANGE_500_DEG);
-    mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+    static const float motionThreshold = 0.20f;
+    static const float freeFallThreshold = 0.35f;
+    static const float vibrationThreshold = 25.0f;
 
-    pinMode(Pins::MPU_INT, INPUT);
-    attachInterrupt(digitalPinToInterrupt(Pins::MPU_INT), onMpuInterrupt, RISING);
-  }
+    static void IRAM_ATTR onMpuInterrupt()
+    {
+        mpuInterruptFlag = true;
+    }
 
-  void update()
-  {
-    if (!data.ready)
-      return;
-    if (!intFlag && millis() - lastRead < 50)
-      return;
+    static bool writeRegister(uint8_t reg, uint8_t value)
+    {
+        Wire.beginTransmission(MPU_ADDR);
+        Wire.write(reg);
+        Wire.write(value);
+        return Wire.endTransmission(true) == 0;
+    }
 
-    lastRead = millis();
-    data.motionInterrupt = intFlag;
-    intFlag = false;
+    static bool readRaw(int16_t &ax, int16_t &ay, int16_t &az, int16_t &temp, int16_t &gx, int16_t &gy, int16_t &gz)
+    {
+        Wire.beginTransmission(MPU_ADDR);
+        Wire.write(0x3B);
 
-    sensors_event_t a;
-    sensors_event_t g;
-    sensors_event_t temp;
+        if (Wire.endTransmission(false) != 0) return false;
+        if (Wire.requestFrom(MPU_ADDR, (uint8_t)14, (uint8_t)true) != 14) return false;
 
-    mpu.getEvent(&a, &g, &temp);
+        ax = (Wire.read() << 8) | Wire.read();
+        ay = (Wire.read() << 8) | Wire.read();
+        az = (Wire.read() << 8) | Wire.read();
+        temp = (Wire.read() << 8) | Wire.read();
+        gx = (Wire.read() << 8) | Wire.read();
+        gy = (Wire.read() << 8) | Wire.read();
+        gz = (Wire.read() << 8) | Wire.read();
 
-    data.ax = a.acceleration.x;
-    data.ay = a.acceleration.y;
-    data.az = a.acceleration.z;
+        return true;
+    }
 
-    data.gx = g.gyro.x;
-    data.gy = g.gyro.y;
-    data.gz = g.gyro.z;
+    static void readSensor()
+    {
+        int16_t rawAx = 0;
+        int16_t rawAy = 0;
+        int16_t rawAz = 0;
+        int16_t rawTemp = 0;
+        int16_t rawGx = 0;
+        int16_t rawGy = 0;
+        int16_t rawGz = 0;
 
-    data.temperature = temp.temperature;
-  }
+        if (!readRaw(rawAx, rawAy, rawAz, rawTemp, rawGx, rawGy, rawGz))
+        {
+            data.ready = false;
+            return;
+        }
 
-  Data getData()
-  {
-    return data;
-  }
+        unsigned long now = millis();
+        float dt = 0.0f;
 
-  bool isReady()
-  {
-    return data.ready;
-  }
+        if (lastDtTime > 0)
+        {
+            dt = (now - lastDtTime) / 1000.0f;
+        }
 
-  bool interruptDetected()
-  {
-    bool state = data.motionInterrupt;
-    data.motionInterrupt = false;
-    return state;
-  }
+        lastDtTime = now;
+        data.ready = true;
+
+        data.ax = rawAx / 16384.0f;
+        data.ay = rawAy / 16384.0f;
+        data.az = rawAz / 16384.0f;
+
+        data.gx = rawGx / 131.0f;
+        data.gy = rawGy / 131.0f;
+        data.gz = rawGz / 131.0f;
+
+        data.temperature = (rawTemp / 340.0f) + 36.53f;
+
+        data.pitch = atan2f(data.ay, sqrtf((data.ax * data.ax) + (data.az * data.az))) * 57.2957795f;
+        data.roll = atan2f(-data.ax, data.az) * 57.2957795f;
+
+        if (dt > 0.0f && dt < 0.2f)
+        {
+            yawAngle += data.gz * dt;
+        }
+
+        data.yaw = yawAngle;
+
+        data.accelerationMagnitude = sqrtf((data.ax * data.ax) + (data.ay * data.ay) + (data.az * data.az));
+        data.gyroMagnitude = sqrtf((data.gx * data.gx) + (data.gy * data.gy) + (data.gz * data.gz));
+
+        if (data.accelerationMagnitude > 0.01f)
+        {
+            float ratio = data.az / data.accelerationMagnitude;
+            ratio = constrain(ratio, -1.0f, 1.0f);
+            data.tiltAngle = acosf(ratio) * 57.2957795f;
+        }
+
+        data.vibrationLevel = fabsf(data.accelerationMagnitude - lastAccelerationMagnitude);
+        lastAccelerationMagnitude = data.accelerationMagnitude;
+
+        data.motionDetected = data.vibrationLevel >= motionThreshold || data.gyroMagnitude >= vibrationThreshold;
+        data.freeFallDetected = data.accelerationMagnitude <= freeFallThreshold;
+
+        data.interruptDetected = mpuInterruptFlag;
+        mpuInterruptFlag = false;
+    }
+
+    void begin()
+    {
+        Wire.begin(Pins::I2C_SDA, Pins::I2C_SCL);
+        Wire.setClock(400000);
+
+        pinMode(Pins::MPU_INT, INPUT);
+        attachInterrupt(digitalPinToInterrupt(Pins::MPU_INT), onMpuInterrupt, RISING);
+
+        Wire.beginTransmission(MPU_ADDR);
+        data.ready = Wire.endTransmission() == 0;
+
+        if (!data.ready) return;
+
+        bool ok = true;
+        ok &= writeRegister(0x6B, 0x00);
+        ok &= writeRegister(0x1A, 0x03);
+        ok &= writeRegister(0x1B, 0x00);
+        ok &= writeRegister(0x1C, 0x00);
+        ok &= writeRegister(0x37, 0x00);
+        ok &= writeRegister(0x38, 0x01);
+
+        data.ready = ok;
+
+        if (data.ready)
+        {
+            readSensor();
+            lastRead = millis();
+        }
+    }
+
+    void update()
+    {
+        if (millis() - lastRead < updateInterval) return;
+        lastRead = millis();
+        readSensor();
+    }
+
+    bool isReady()
+    {
+        return data.ready;
+    }
+
+    bool hasInterrupt()
+    {
+        bool state = data.interruptDetected;
+        data.interruptDetected = false;
+        return state;
+    }
+
+    Data getData()
+    {
+        return data;
+    }
+
+    void resetYaw()
+    {
+        yawAngle = 0.0f;
+        data.yaw = 0.0f;
+    }
 }

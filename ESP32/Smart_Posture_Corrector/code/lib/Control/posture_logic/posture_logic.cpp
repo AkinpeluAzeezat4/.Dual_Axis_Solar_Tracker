@@ -1,17 +1,21 @@
 #include <Arduino.h>
 #include <math.h>
+#include <Preferences.h>
 #include "posture_logic.h"
-#include "mpu6050_sensor.h"
+#include "mpu6050_sensor/mpu6050_sensor.h"
 #include "vibration_motor/vibration_motor.h"
 #include "buzzer/buzzer.h"
 #include "led_indicator/led_indicator.h"
 
 namespace posture_logic
 {
+  static Preferences prefs;
+
   static State state = CALIBRATING;
 
   static bool muted = false;
-  static bool calibrating = true;
+  static bool calibrating = false;
+  static bool savedCalibration = false;
 
   static unsigned long calibrationStart = 0;
   static unsigned long badPostureStart = 0;
@@ -22,8 +26,8 @@ namespace posture_logic
 
   static uint16_t calibrationCount = 0;
 
-  static const unsigned long calibrationTime = 5000;
-  static const unsigned long alertDelay = 5000;
+  static const unsigned long calibrationTime = 2000;
+  static const unsigned long alertDelay = 3000;
 
   static const float badAngleThreshold = 15.0f;
   static const float goodAngleThreshold = 8.0f;
@@ -32,6 +36,28 @@ namespace posture_logic
   {
     vibration_motor::setAlert(false);
     buzzer::setAlert(false);
+  }
+
+  static void saveCalibration()
+  {
+    prefs.putFloat("baseline", baselinePitch);
+    prefs.putBool("saved", true);
+    savedCalibration = true;
+  }
+
+  static bool loadCalibration()
+  {
+    savedCalibration = prefs.getBool("saved", false);
+
+    if (savedCalibration)
+    {
+      baselinePitch = prefs.getFloat("baseline", 0.0f);
+      calibrating = false;
+      state = GOOD_POSTURE;
+      return true;
+    }
+
+    return false;
   }
 
   static void startCalibration()
@@ -50,7 +76,12 @@ namespace posture_logic
 
   void begin()
   {
-    startCalibration();
+    prefs.begin("posture", false);
+
+    if (!loadCalibration())
+    {
+      startCalibration();
+    }
   }
 
   void update()
@@ -76,8 +107,11 @@ namespace posture_logic
       if (now - calibrationStart >= calibrationTime && calibrationCount > 0)
       {
         baselinePitch = calibrationSum / calibrationCount;
+        saveCalibration();
+
         calibrating = false;
         state = GOOD_POSTURE;
+
         vibration_motor::pulse(300);
         buzzer::beep(120);
       }
@@ -129,6 +163,14 @@ namespace posture_logic
     startCalibration();
   }
 
+  void clearSavedCalibration()
+  {
+    prefs.remove("baseline");
+    prefs.putBool("saved", false);
+    savedCalibration = false;
+    startCalibration();
+  }
+
   void setMuted(bool stateValue)
   {
     muted = stateValue;
@@ -157,6 +199,11 @@ namespace posture_logic
   float getPitchError()
   {
     return pitchError;
+  }
+
+  bool hasSavedCalibration()
+  {
+    return savedCalibration;
   }
 
   const char *getStateText()

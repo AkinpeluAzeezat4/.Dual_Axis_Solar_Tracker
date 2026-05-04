@@ -4,64 +4,59 @@
 
 namespace battery_level
 {
-  static float voltage = 0.0f;
-  static uint8_t percentage = 0;
-  static unsigned long lastReadTime = 0;
+    static float voltage = 0.0f;
+    static uint8_t percentage = 0;
+    static unsigned long lastReadTime = 0;
 
-  static const unsigned long readInterval = 500;
-  static const float adcRef = 3.3f;
-  static const float dividerRatio = 4.0f;
-  static const float minVoltage = 6.4f;
-  static const float maxVoltage = 8.4f;
+    static const unsigned long readInterval = 500;
+    static const float adcRef = 3.3f;
+    static const float dividerRatio = 4.0f;
+    static const float minVoltage = 6.4f;
+    static const float maxVoltage = 8.4f;
 
-  static uint8_t voltageToPercent(float v)
-  {
-    if (v <= minVoltage)
-      return 0;
-    if (v >= maxVoltage)
-      return 100;
-    return (uint8_t)(((v - minVoltage) * 100.0f) / (maxVoltage - minVoltage));
-  }
-
-  void begin()
-  {
-    analogReadResolution(12);
-    analogSetPinAttenuation(Pins::BATTERY_ADC, ADC_11db);
-    update();
-  }
-
-  void update()
-  {
-    if (millis() - lastReadTime < readInterval)
-      return;
-    lastReadTime = millis();
-
-    uint32_t sum = 0;
-
-    for (uint8_t i = 0; i < 20; i++)
+    static uint8_t voltageToPercent(float v)
     {
-      sum += analogRead(Pins::BATTERY_ADC);
+        if (v <= minVoltage) return 0;
+        if (v >= maxVoltage) return 100;
+        return (uint8_t)(((v - minVoltage) * 100.0f) / (maxVoltage - minVoltage));
     }
 
-    float raw = sum / 20.0f;
-    float adcVoltage = (raw / 4095.0f) * adcRef;
+    void begin()
+    {
+        analogReadResolution(12);
+        analogSetPinAttenuation(Pins::BATTERY_ADC, ADC_11db);
+    }
 
-    voltage = adcVoltage * dividerRatio;
-    percentage = voltageToPercent(voltage);
-  }
+    void update()
+    {
+        if (millis() - lastReadTime < readInterval) return;
+        lastReadTime = millis();
 
-  float getVoltage()
-  {
-    return voltage;
-  }
+        uint32_t sum = 0;
+        for (uint8_t i = 0; i < 20; i++)
+        {
+            sum += analogRead(Pins::BATTERY_ADC);
+        }
 
-  uint8_t getPercentage()
-  {
-    return percentage;
-  }
+        float raw = sum / 20.0f;
+        float adcVoltage = (raw / 4095.0f) * adcRef;
 
-  bool isLow()
-  {
-    return percentage <= 20;
-  }
+        voltage = adcVoltage * dividerRatio;
+        percentage = voltageToPercent(voltage);
+    }
+
+    float getVoltage()
+    {
+        return voltage;
+    }
+
+    uint8_t getPercentage()
+    {
+        return percentage;
+    }
+
+    bool isLow()
+    {
+        return percentage <= 20;
+    }
 }

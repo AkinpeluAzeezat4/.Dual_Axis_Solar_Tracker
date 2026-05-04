@@ -3,14 +3,13 @@
 
 namespace error_handling
 {
-  void begin();
-  void update();
+    void begin();
+    void update();
 
-  void setCodeError(bool state);
-  bool hasError();
-
-  bool hadWatchdogReset();
-  bool hasCodeError();
+    void setCodeError(bool state);
+    bool hasError();
+    bool hadWatchdogReset();
+    bool hasCodeError();
 }
 
 #endif

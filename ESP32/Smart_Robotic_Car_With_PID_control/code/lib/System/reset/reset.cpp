@@ -3,16 +3,16 @@
 
 namespace reset
 {
-  void begin()
-  {
-  }
+    void begin()
+    {
+    }
 
-  void update()
-  {
-  }
+    void update()
+    {
+    }
 
-  void restart()
-  {
-    ESP.restart();
-  }
+    void restart()
+    {
+        ESP.restart();
+    }
 }

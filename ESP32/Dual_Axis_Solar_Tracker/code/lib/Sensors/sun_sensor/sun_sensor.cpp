@@ -48,7 +48,7 @@ namespace sun_sensor
     data.bottomLeft = Pins::readAnalog(Pins::LDR_BOTTOM_LEFT);
     data.bottomRight = Pins::readAnalog(Pins::LDR_BOTTOM_RIGHT);
     data.night = Pins::readAnalog(Pins::LDR_NIGHT);
-    data.pot = Pins::readAnalog(Pins::POT_CALIBRATION);
+    // data.pot = Pins::readAnalog(Pins::POT_CALIBRATION);
 
     data.leftAverage = 0;
     data.rightAverage = 0;
@@ -76,7 +76,7 @@ namespace sun_sensor
     data.bottomLeft = filteredRead(Pins::LDR_BOTTOM_LEFT, data.bottomLeft);
     data.bottomRight = filteredRead(Pins::LDR_BOTTOM_RIGHT, data.bottomRight);
     data.night = filteredRead(Pins::LDR_NIGHT, data.night);
-    data.pot = filteredRead(Pins::POT_CALIBRATION, data.pot);
+    // data.pot = filteredRead(Pins::POT_CALIBRATION, data.pot);
 
     data.leftAverage = (data.topLeft + data.bottomLeft) / 2;
     data.rightAverage = (data.topRight + data.bottomRight) / 2;
@@ -111,7 +111,7 @@ namespace sun_sensor
 
   int getDeadband()
   {
-    int base = map(data.pot, 0, 4095, 80, 650);
+    int base = 220;
     return clampValue(base + deadbandOffset, 30, 1200);
   }
 

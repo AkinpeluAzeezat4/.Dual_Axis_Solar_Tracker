@@ -3,19 +3,18 @@
 namespace Pins
 {
   const uint8_t AZ_EN = 25;
-  const uint8_t AZ_IN1 = 33;
-  const uint8_t AZ_IN2 = 32;
+  const uint8_t AZ_IN1 = 32;
+  const uint8_t AZ_IN2 = 33;
 
   const uint8_t EL_EN = 14;
-  const uint8_t EL_IN1 = 27;
-  const uint8_t EL_IN2 = 26;
+  const uint8_t EL_IN1 = 26;
+  const uint8_t EL_IN2 = 27;
 
-  const uint8_t LDR_TOP_LEFT = 36;
-  const uint8_t LDR_TOP_RIGHT = 39;
-  const uint8_t LDR_BOTTOM_LEFT = 4;
+  const uint8_t LDR_TOP_LEFT = 4;
+  const uint8_t LDR_TOP_RIGHT = 35;
+  const uint8_t LDR_BOTTOM_LEFT = 39;
   const uint8_t LDR_BOTTOM_RIGHT = 34;
-  const uint8_t LDR_NIGHT = 35;
-  const uint8_t POT_CALIBRATION = 39;
+  const uint8_t LDR_NIGHT = 36;
 
   const uint8_t ENC_CLK = 18;
   const uint8_t ENC_DT = 19;
@@ -68,7 +67,6 @@ namespace Pins
     analogSetPinAttenuation(LDR_BOTTOM_LEFT, ADC_11db);
     analogSetPinAttenuation(LDR_BOTTOM_RIGHT, ADC_11db);
     analogSetPinAttenuation(LDR_NIGHT, ADC_11db);
-    analogSetPinAttenuation(POT_CALIBRATION, ADC_11db);
   }
 
   int readPin(uint8_t gpio)

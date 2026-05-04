@@ -52,6 +52,7 @@ namespace vibration_motor
       lastToggle = now;
       writeOutput(!outputState);
     }
+    writeOutput(true);
   }
 
   void setAlert(bool state)

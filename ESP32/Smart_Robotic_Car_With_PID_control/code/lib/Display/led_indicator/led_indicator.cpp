@@ -1,84 +1,91 @@
 #include <Arduino.h>
 #include "led_indicator.h"
+#include "Pins.h"
 
 namespace led_indicator
 {
-  int ledPin;
-  const int pwmChannel = 0;
-  const int pwmFreq = 10000;
-  const int pwmResolution = 8;
+    static uint8_t batteryPercentage = 0;
 
-  int brightness = 0;
-  bool rising = true;
+    static const int powerPwmChannel = 0;
+    static const int powerPwmFreq = 5000;
+    static const int powerPwmResolution = 8;
 
-  unsigned long lastUpdate = 0;
-  const int stepTime = 1;
+    static int powerBrightness = 0;
+    static bool powerRising = true;
+    static bool powerBreathingEnabled = true;
 
-  int pulseCount = 0;
+    static unsigned long lastPowerUpdate = 0;
+    static const unsigned long powerStepTime = 5;
 
-  bool inPause = false;
-  unsigned long pauseStart = 0;
-  const int pauseDuration = 1000;
-
-  void begin(uint8_t pin)
-  {
-    ledPin = pin;
-
-    ledcSetup(pwmChannel, pwmFreq, pwmResolution);
-    ledcAttachPin(ledPin, pwmChannel);
-  }
-
-  void update()
-  {
-    unsigned long now = millis();
-
-    // handle pause state (non-blocking)
-    if (inPause)
+    static void updateBatteryLeds()
     {
-      if (now - pauseStart >= pauseDuration)
-      {
-        inPause = false;
-      }
-      else
-      {
-        return;
-      }
+        digitalWrite(Pins::BATTERY_LED1, batteryPercentage >= 25 ? HIGH : LOW);
+        digitalWrite(Pins::BATTERY_LED2, batteryPercentage >= 50 ? HIGH : LOW);
+        digitalWrite(Pins::BATTERY_LED3, batteryPercentage >= 75 ? HIGH : LOW);
+        digitalWrite(Pins::BATTERY_LED4, batteryPercentage >= 95 ? HIGH : LOW);
     }
 
-    if (now - lastUpdate < stepTime)
-      return;
-
-    lastUpdate = now;
-
-    if (rising)
+    static void updatePowerBreathing()
     {
-      brightness += 1;
-
-      if (brightness >= 255)
-      {
-        brightness = 255;
-        rising = false;
-      }
-    }
-    else
-    {
-      brightness -= 1;
-
-      if (brightness <= 0)
-      {
-        brightness = 0;
-        rising = true;
-        pulseCount++;
-
-        if (pulseCount >= 2)
+        if (!powerBreathingEnabled)
         {
-          pulseCount = 0;
-          inPause = true;
-          pauseStart = now;
+            ledcWrite(powerPwmChannel, 0);
+            return;
         }
-      }
+
+        unsigned long now = millis();
+        if (now - lastPowerUpdate < powerStepTime) return;
+        lastPowerUpdate = now;
+
+        if (powerRising)
+        {
+            powerBrightness++;
+            if (powerBrightness >= 255)
+            {
+                powerBrightness = 255;
+                powerRising = false;
+            }
+        }
+        else
+        {
+            powerBrightness--;
+            if (powerBrightness <= 0)
+            {
+                powerBrightness = 0;
+                powerRising = true;
+            }
+        }
+
+        ledcWrite(powerPwmChannel, powerBrightness);
     }
 
-    ledcWrite(pwmChannel, brightness);
-  }
+    void begin()
+    {
+        pinMode(Pins::BATTERY_LED1, OUTPUT);
+        pinMode(Pins::BATTERY_LED2, OUTPUT);
+        pinMode(Pins::BATTERY_LED3, OUTPUT);
+        pinMode(Pins::BATTERY_LED4, OUTPUT);
+
+        ledcSetup(powerPwmChannel, powerPwmFreq, powerPwmResolution);
+        ledcAttachPin(Pins::POWER_LED, powerPwmChannel);
+
+        setBatteryLevel(0);
+        ledcWrite(powerPwmChannel, 0);
+    }
+
+    void update()
+    {
+        updateBatteryLeds();
+        updatePowerBreathing();
+    }
+
+    void setBatteryLevel(uint8_t percentage)
+    {
+        batteryPercentage = constrain(percentage, 0, 100);
+    }
+
+    void enablePowerBreathing(bool state)
+    {
+        powerBreathingEnabled = state;
+    }
 }

@@ -4,41 +4,37 @@
 
 namespace error_handling
 {
-  static bool watchdogError = false;
-  static bool codeError = false;
+    static bool watchdogError = false;
+    static bool codeError = false;
 
-  void begin()
-  {
-    esp_reset_reason_t reason = esp_reset_reason();
+    void begin()
+    {
+        esp_reset_reason_t reason = esp_reset_reason();
+        watchdogError = reason == ESP_RST_WDT || reason == ESP_RST_TASK_WDT;
+        codeError = false;
+    }
 
-    watchdogError =
-        reason == ESP_RST_WDT ||
-        reason == ESP_RST_TASK_WDT;
+    void update()
+    {
+    }
 
-    codeError = false;
-  }
+    void setCodeError(bool state)
+    {
+        codeError = state;
+    }
 
-  void update()
-  {
-  }
+    bool hasError()
+    {
+        return watchdogError || codeError;
+    }
 
-  void setCodeError(bool state)
-  {
-    codeError = state;
-  }
+    bool hadWatchdogReset()
+    {
+        return watchdogError;
+    }
 
-  bool hasError()
-  {
-    return watchdogError || codeError;
-  }
-
-  bool hadWatchdogReset()
-  {
-    return watchdogError;
-  }
-
-  bool hasCodeError()
-  {
-    return codeError;
-  }
+    bool hasCodeError()
+    {
+        return codeError;
+    }
 }

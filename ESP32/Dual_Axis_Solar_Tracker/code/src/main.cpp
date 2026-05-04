@@ -6,7 +6,7 @@
 #include "led_indicator/led_indicator.h"
 #include "sleep_wake/sleep_wake.h"
 #include "error_handling/error_handling.h"
-#include "reset/reset.h"
+// #include "reset/reset.h"
 
 unsigned long lastPrint = 0;
 
@@ -21,7 +21,7 @@ void setup()
   led_indicator::begin(Pins::LED_STATUS);
   sleep_wake::begin();
   error_handling::begin();
-  reset::begin();
+  // reset::begin();
 }
 
 void loop()
@@ -62,3 +62,4 @@ void loop()
     Serial.println(sun_sensor::getNightThreshold());
   }
 }
+
