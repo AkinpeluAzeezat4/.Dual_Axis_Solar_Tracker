@@ -21,7 +21,7 @@ namespace ndelay
 
     if (now - startTime >= timeFrame)
     {
-      startTime = now; // reset timer
+      startTime = now;
       return true;
     }
 

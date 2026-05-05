@@ -1,6 +1,7 @@
 #pragma once
 
-namespace regulator {
+namespace regulator
+{
   void begin();
   void update();
 }

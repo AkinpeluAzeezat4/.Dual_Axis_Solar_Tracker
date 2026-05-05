@@ -1,11 +1,9 @@
-#ifndef SHARED_VAR_H
-#define SHARED_VAR_H
-
+#pragma once
 #include <Arduino.h>
 
 namespace shared_var
 {
   extern bool settingsMode;
+  extern bool waitRelease;
+  extern bool bootSetupRequest;
 }
-
-#endif

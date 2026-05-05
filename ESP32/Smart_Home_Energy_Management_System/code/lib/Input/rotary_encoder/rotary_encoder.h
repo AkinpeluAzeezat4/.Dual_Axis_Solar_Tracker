@@ -1,5 +1,4 @@
-#ifndef ROTARY_ENCODER_H
-#define ROTARY_ENCODER_H
+#pragma once
 
 #include <Arduino.h>
 
@@ -13,6 +12,6 @@ namespace rotary_encoder
   bool wasPressed();
   bool isPressed();
   bool isHeld(unsigned long holdTime);
-}
 
-#endif
+  void lockUntilRelease();
+}

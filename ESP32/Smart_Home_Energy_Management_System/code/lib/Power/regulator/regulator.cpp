@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include "regulator.h"
 
-namespace regulator {
+namespace regulator
+{
+  void begin()
+  {
+  }
 
-void begin() {
-}
-
-void update() {
-}
-
+  void update()
+  {
+  }
 }
