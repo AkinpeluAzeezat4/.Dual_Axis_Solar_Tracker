@@ -20,11 +20,11 @@ namespace rotary_encoder
 
   void begin()
   {
-    pinMode(Pins::ENC_CLK, INPUT_PULLUP);
-    pinMode(Pins::ENC_DT, INPUT_PULLUP);
-    pinMode(Pins::ENC_SW, INPUT_PULLUP);
+    pinMode(Pins::ENCODER_CLK, INPUT_PULLUP);
+    pinMode(Pins::ENCODER_DT, INPUT_PULLUP);
+    pinMode(Pins::ENCODER_SW, INPUT_PULLUP);
 
-    lastA = digitalRead(Pins::ENC_CLK);
+    lastA = digitalRead(Pins::ENCODER_CLK);
   }
 
   void update()
@@ -32,8 +32,8 @@ namespace rotary_encoder
     clicked = false;
     longPressed = false;
 
-    bool A = digitalRead(Pins::ENC_CLK);
-    bool B = digitalRead(Pins::ENC_DT);
+    bool A = digitalRead(Pins::ENCODER_CLK);
+    bool B = digitalRead(Pins::ENCODER_DT);
 
     if (A != lastA)
     {
@@ -45,7 +45,7 @@ namespace rotary_encoder
       lastA = A;
     }
 
-    bool reading = digitalRead(Pins::ENC_SW) == LOW;
+    bool reading = digitalRead(Pins::ENCODER_SW) == LOW;
 
     if (reading != lastButtonState)
     {

@@ -11,7 +11,7 @@ namespace sleep_wake
 
   void begin()
   {
-    pinMode(Pins::ENC_SW, INPUT_PULLUP);
+    pinMode(Pins::ENCODER_SW, INPUT_PULLUP);
 
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_27, 0);
 

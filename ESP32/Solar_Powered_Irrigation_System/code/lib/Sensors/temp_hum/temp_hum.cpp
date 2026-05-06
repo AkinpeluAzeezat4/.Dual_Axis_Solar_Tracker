@@ -1,3 +1,61 @@
+// #include <Arduino.h>
+// #include <DHT.h>
+// #include "temp_hum.h"
+// #include "Pins.h"
+
+// namespace temp_hum
+// {
+//   static DHT dht(Pins::DHT_DATA, DHT21);
+
+//   static float temperature = 0.0f;
+//   static float humidity = 0.0f;
+//   static bool ready = false;
+
+//   static unsigned long lastRead = 0;
+//   static const unsigned long readInterval = 2000;
+
+//   void begin()
+//   {
+//     dht.begin();
+//   }
+
+//   void update()
+//   {
+//     if (millis() - lastRead < readInterval)
+//       return;
+//     lastRead = millis();
+
+//     float h = dht.readHumidity();
+//     float t = dht.readTemperature();
+
+//     if (isnan(h) || isnan(t))
+//     {
+//       ready = false;
+//       return;
+//     }
+
+//     humidity = h;
+//     temperature = t;
+//     ready = true;
+//   }
+
+//   float getTemperature()
+//   {
+//     return temperature;
+//   }
+
+//   float getHumidity()
+//   {
+//     return humidity;
+//   }
+
+//   bool isReady()
+//   {
+//     return ready;
+//   }
+// }
+
+
 #include <Arduino.h>
 #include <DHT.h>
 #include "temp_hum.h"
@@ -5,52 +63,69 @@
 
 namespace temp_hum
 {
-  static DHT dht(Pins::DHT_DATA, DHT21);
+    static DHT dht(Pins::DHT_DATA, DHT21);
 
-  static float temperature = 0.0f;
-  static float humidity = 0.0f;
-  static bool ready = false;
+    static float temperature = 0.0f;
+    static float humidity = 0.0f;
 
-  static unsigned long lastRead = 0;
-  static const unsigned long readInterval = 2000;
+    static bool ready = false;
+    static bool error = false;
 
-  void begin()
-  {
-    dht.begin();
-  }
+    static uint16_t failCount = 0;
 
-  void update()
-  {
-    if (millis() - lastRead < readInterval)
-      return;
-    lastRead = millis();
+    static unsigned long lastRead = 0;
+    static const unsigned long readInterval = 4000;
 
-    float h = dht.readHumidity();
-    float t = dht.readTemperature();
-
-    if (isnan(h) || isnan(t))
+    void begin()
     {
-      ready = false;
-      return;
+        pinMode(Pins::DHT_DATA, INPUT_PULLUP);
+        dht.begin();
     }
 
-    humidity = h;
-    temperature = t;
-    ready = true;
-  }
+    void update()
+    {
+        if (millis() - lastRead < readInterval) return;
+        lastRead = millis();
 
-  float getTemperature()
-  {
-    return temperature;
-  }
+        float h = dht.readHumidity();
+        float t = dht.readTemperature();
 
-  float getHumidity()
-  {
-    return humidity;
-  }
+        if (isnan(h) || isnan(t))
+        {
+            failCount++;
+            error = true;
+            return;
+        }
 
-  bool isReady()
-  {
-    return ready;
-  }
+        humidity = h;
+        temperature = t;
+        ready = true;
+        error = false;
+        failCount = 0;
+    }
+
+    float getTemperature()
+    {
+        return temperature;
+    }
+
+    float getHumidity()
+    {
+        return humidity;
+    }
+
+    bool isReady()
+    {
+        return ready;
+    }
+
+    bool hasError()
+    {
+        return error;
+    }
+
+    uint16_t getFailCount()
+    {
+        return failCount;
+    }
 }

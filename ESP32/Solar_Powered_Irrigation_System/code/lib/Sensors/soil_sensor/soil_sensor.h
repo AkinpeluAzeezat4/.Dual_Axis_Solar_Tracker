@@ -3,10 +3,10 @@
 
 namespace soil_sensor
 {
-  void begin();
-  void update();
+    void begin();
+    void update();
 
-  int getRaw();
-  uint8_t getMoisturePercent();
-  bool isDry();
+    int getRaw();
+    uint8_t getMoisturePercent();
+    bool isDry();
 }

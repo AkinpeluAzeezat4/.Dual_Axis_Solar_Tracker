@@ -4,7 +4,7 @@
 
 namespace led_indicator
 {
-  static const uint8_t ledPin = Pins::LED;
+  static const uint8_t ledPin = Pins::STATUS_LED;
   static const int pwmChannel = 0;
   static const int pwmFreq = 10000;
   static const int pwmResolution = 8;

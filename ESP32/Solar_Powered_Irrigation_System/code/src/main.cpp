@@ -4,7 +4,7 @@
 #include "temp_hum/temp_hum.h"
 #include "ultrasonic/ultrasonic.h"
 #include "soil_sensor/soil_sensor.h"
-#include "button/button.h"
+// #include "button/button.h"
 #include "rotary_encoder/rotary_encoder.h"
 #include "buzzer/buzzer.h"
 #include "pump/pump.h"
@@ -23,7 +23,7 @@ void setup()
   Pins::begin();
   settings_manager::begin();
 
-  button::begin();
+  // button::begin();
   rotary_encoder::begin();
 
   temp_hum::begin();
@@ -46,7 +46,7 @@ void loop()
 {
   Pins::update();
 
-  button::update();
+  // button::update();
   rotary_encoder::update();
 
   temp_hum::update();

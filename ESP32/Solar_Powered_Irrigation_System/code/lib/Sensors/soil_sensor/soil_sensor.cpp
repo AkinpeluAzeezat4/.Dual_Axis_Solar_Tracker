@@ -5,58 +5,60 @@
 
 namespace soil_sensor
 {
-  static int rawValue = 0;
-  static uint8_t moisturePercent = 0;
-  static unsigned long lastRead = 0;
-  static const unsigned long readInterval = 1000;
+    static int rawValue = 0;
+    static uint8_t moisturePercent = 0;
 
-  void begin()
-  {
-    pinMode(Pins::SOIL_SENSOR, INPUT);
-    analogSetPinAttenuation(Pins::SOIL_SENSOR, ADC_11db);
-  }
+    static unsigned long lastRead = 0;
+    static const unsigned long readInterval = 1000;
 
-  void update()
-  {
-    if (millis() - lastRead < readInterval)
-      return;
-    lastRead = millis();
-
-    uint32_t sum = 0;
-    for (uint8_t i = 0; i < 16; i++)
+    void begin()
     {
-      sum += analogRead(Pins::SOIL_SENSOR);
+        pinMode(Pins::SOIL_SENSOR, INPUT);
+        analogSetPinAttenuation(Pins::SOIL_SENSOR, ADC_11db);
     }
 
-    rawValue = sum / 16;
-
-    auto &s = settings_manager::get();
-
-    if (s.soilDryRaw == s.soilWetRaw)
+    void update()
     {
-      moisturePercent = 0;
-      return;
+        if (millis() - lastRead < readInterval) return;
+
+        lastRead = millis();
+
+        uint32_t sum = 0;
+
+        for (uint8_t i = 0; i < 16; i++)
+        {
+            sum += analogRead(Pins::SOIL_SENSOR);
+        }
+
+        rawValue = sum / 16;
+
+        auto &s = settings_manager::get();
+
+        if (s.soilDryRaw == s.soilWetRaw)
+        {
+            moisturePercent = 0;
+            return;
+        }
+
+        int percent = map(rawValue, s.soilDryRaw, s.soilWetRaw, 0, 100);
+        percent = constrain(percent, 0, 100);
+
+        moisturePercent = (uint8_t)percent;
     }
 
-    int percent = map(rawValue, s.soilDryRaw, s.soilWetRaw, 0, 100);
-    percent = constrain(percent, 0, 100);
+    int getRaw()
+    {
+        return rawValue;
+    }
 
-    moisturePercent = percent;
-  }
+    uint8_t getMoisturePercent()
+    {
+        return moisturePercent;
+    }
 
-  int getRaw()
-  {
-    return rawValue;
-  }
-
-  uint8_t getMoisturePercent()
-  {
-    return moisturePercent;
-  }
-
-  bool isDry()
-  {
-    auto &s = settings_manager::get();
-    return moisturePercent <= s.soilDryThreshold;
-  }
+    bool isDry()
+    {
+        auto &s = settings_manager::get();
+        return moisturePercent <= s.soilDryPercent;
+    }
 }

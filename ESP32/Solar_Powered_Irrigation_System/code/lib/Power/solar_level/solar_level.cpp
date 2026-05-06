@@ -1,49 +1,49 @@
 #include <Arduino.h>
 #include "solar_level.h"
+#include "Pins.h"
 
 namespace solar_level
 {
-  static uint8_t solarPin = 255;
-  static float voltage = 0.0f;
-  static float scaleFactor = 2.0f;
+    static float voltage = 0.0f;
 
-  static unsigned long lastReadTime = 0;
-  static const unsigned long readInterval = 500;
+    static unsigned long lastReadTime = 0;
+    static const unsigned long readInterval = 1000;
 
-  void begin(uint8_t pin, float scale)
-  {
-    solarPin = pin;
-    scaleFactor = scale;
+    static const float scaleFactor = 2.0f;
 
-    pinMode(solarPin, INPUT);
-    analogReadResolution(12);
-    analogSetPinAttenuation(solarPin, ADC_11db);
-  }
-
-  void update()
-  {
-    if (solarPin == 255)
-      return;
-
-    unsigned long now = millis();
-
-    if (now - lastReadTime >= readInterval)
+    void begin()
     {
-      lastReadTime = now;
-
-      int raw = analogRead(solarPin);
-      float adcVoltage = (raw / 4095.0f) * 3.3f;
-      voltage = adcVoltage * scaleFactor;
+        pinMode(Pins::SOLAR_SENSE, INPUT);
+        analogReadResolution(12);
+        analogSetPinAttenuation(Pins::SOLAR_SENSE, ADC_11db);
     }
-  }
 
-  float getVoltage()
-  {
-    return voltage;
-  }
+    void update()
+    {
+        if (millis() - lastReadTime < readInterval) return;
 
-  bool isPresent()
-  {
-    return voltage > 1.0f;
-  }
+        lastReadTime = millis();
+
+        uint32_t sum = 0;
+
+        for (uint8_t i = 0; i < 16; i++)
+        {
+            sum += analogRead(Pins::SOLAR_SENSE);
+        }
+
+        float raw = sum / 16.0f;
+        float adcVoltage = (raw / 4095.0f) * 3.3f;
+
+        voltage = adcVoltage * scaleFactor;
+    }
+
+    float getVoltage()
+    {
+        return voltage;
+    }
+
+    bool isPresent()
+    {
+        return voltage > 1.0f;
+    }
 }

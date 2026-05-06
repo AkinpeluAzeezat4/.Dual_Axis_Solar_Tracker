@@ -1,44 +1,69 @@
 #include <Arduino.h>
 #include "battery_level.h"
+#include "Pins.h"
+#include "settings_manager/settings_manager.h"
 
 namespace battery_level
 {
-  static uint8_t batteryPin = 255;
-  static float voltage = 0.0f;
-  static float scaleFactor = 1.61f;
+    static float voltage = 0.0f;
+    static uint8_t percentage = 0;
 
-  static unsigned long lastReadTime = 0;
-  static const unsigned long readInterval = 500;
+    static unsigned long lastReadTime = 0;
+    static const unsigned long readInterval = 1000;
 
-  void begin(uint8_t pin, float scale)
-  {
-    batteryPin = pin;
-    scaleFactor = scale;
+    static const float scaleFactor = 2.0f;
 
-    pinMode(batteryPin, INPUT);
-    analogReadResolution(12);
-    analogSetPinAttenuation(batteryPin, ADC_11db);
-  }
-
-  void update()
-  {
-    if (batteryPin == 255)
-      return;
-
-    unsigned long now = millis();
-
-    if (now - lastReadTime >= readInterval)
+    void begin()
     {
-      lastReadTime = now;
-
-      int raw = analogRead(batteryPin);
-      float adcVoltage = (raw / 4095.0f) * 3.3f;
-      voltage = adcVoltage * scaleFactor;
+        pinMode(Pins::BATTERY_SENSE, INPUT);
+        analogReadResolution(12);
+        analogSetPinAttenuation(Pins::BATTERY_SENSE, ADC_11db);
     }
-  }
 
-  float getVoltage()
-  {
-    return voltage;
-  }
+    void update()
+    {
+        if (millis() - lastReadTime < readInterval) return;
+
+        lastReadTime = millis();
+
+        uint32_t sum = 0;
+
+        for (uint8_t i = 0; i < 16; i++)
+        {
+            sum += analogRead(Pins::BATTERY_SENSE);
+        }
+
+        float raw = sum / 16.0f;
+        float adcVoltage = (raw / 4095.0f) * 3.3f;
+
+        voltage = adcVoltage * scaleFactor;
+
+        auto &s = settings_manager::get();
+
+        if (s.batteryFullV <= s.batteryEmptyV)
+        {
+            percentage = 0;
+            return;
+        }
+
+        float pct = ((voltage - s.batteryEmptyV) / (s.batteryFullV - s.batteryEmptyV)) * 100.0f;
+        pct = constrain(pct, 0.0f, 100.0f);
+
+        percentage = (uint8_t)pct;
+    }
+
+    float getVoltage()
+    {
+        return voltage;
+    }
+
+    uint8_t getPercentage()
+    {
+        return percentage;
+    }
+
+    bool isLow()
+    {
+        return percentage <= 15;
+    }
 }
