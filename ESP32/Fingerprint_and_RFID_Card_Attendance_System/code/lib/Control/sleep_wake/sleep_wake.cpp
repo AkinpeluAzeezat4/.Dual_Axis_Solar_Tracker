@@ -12,26 +12,26 @@ namespace sleep_wake
   {
     switch (cause)
     {
-    case ESP_SLEEP_WAKEUP_UNDEFINED:
-      return "Power on reset";
+      case ESP_SLEEP_WAKEUP_UNDEFINED:
+        return "Power on reset";
 
-    case ESP_SLEEP_WAKEUP_EXT0:
-      return "Wake from EXT0 pin";
+      case ESP_SLEEP_WAKEUP_EXT0:
+        return "Wake from EXT0 pin";
 
-    case ESP_SLEEP_WAKEUP_EXT1:
-      return "Wake from EXT1 pin";
+      case ESP_SLEEP_WAKEUP_EXT1:
+        return "Wake from EXT1 pin";
 
-    case ESP_SLEEP_WAKEUP_TIMER:
-      return "Wake from timer";
+      case ESP_SLEEP_WAKEUP_TIMER:
+        return "Wake from timer";
 
-    case ESP_SLEEP_WAKEUP_TOUCHPAD:
-      return "Wake from touchpad";
+      case ESP_SLEEP_WAKEUP_TOUCHPAD:
+        return "Wake from touchpad";
 
-    case ESP_SLEEP_WAKEUP_ULP:
-      return "Wake from ULP";
+      case ESP_SLEEP_WAKEUP_ULP:
+        return "Wake from ULP";
 
-    default:
-      return "Wake from other source";
+      default:
+        return "Wake from other source";
     }
   }
 

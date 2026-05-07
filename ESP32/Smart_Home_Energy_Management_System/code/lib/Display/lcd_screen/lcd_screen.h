@@ -11,6 +11,5 @@ namespace lcd_screen
   void resetRelaySetup();
 
   int getRelayPower(int relay);
-  int getSystemPower();
   int getInverterPower();
 }

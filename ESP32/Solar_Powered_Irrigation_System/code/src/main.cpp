@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include "Pins.h"
 #include "settings_manager/settings_manager.h"
+#include "setup_manager/setup_manager.h"
+#include "system_logic/system_logic.h"
 #include "temp_hum/temp_hum.h"
 #include "ultrasonic/ultrasonic.h"
 #include "soil_sensor/soil_sensor.h"
-// #include "button/button.h"
 #include "rotary_encoder/rotary_encoder.h"
 #include "buzzer/buzzer.h"
 #include "pump/pump.h"
@@ -19,11 +20,9 @@
 void setup()
 {
   Serial.begin(115200);
-
   Pins::begin();
   settings_manager::begin();
 
-  // button::begin();
   rotary_encoder::begin();
 
   temp_hum::begin();
@@ -37,6 +36,9 @@ void setup()
   led_indicator::begin();
   lcd_screen::begin();
 
+  setup_manager::begin();
+  system_logic::begin();
+
   sleep_wake::begin();
   error_handling::begin();
   reset::begin();
@@ -45,8 +47,6 @@ void setup()
 void loop()
 {
   Pins::update();
-
-  // button::update();
   rotary_encoder::update();
 
   temp_hum::update();
@@ -55,13 +55,18 @@ void loop()
   battery_level::update();
   solar_level::update();
 
+  setup_manager::update();
+
+  if (!setup_manager::isActive())
+  {
+    system_logic::update();
+  }
+
   error_handling::update();
   pump::update();
-
   buzzer::update();
   led_indicator::update();
   lcd_screen::update();
-
   sleep_wake::update();
   reset::update();
 }

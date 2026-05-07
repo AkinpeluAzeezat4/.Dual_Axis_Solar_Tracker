@@ -5,72 +5,104 @@
 
 namespace ultrasonic
 {
-    static float distanceCm = 0.0f;
-    static uint8_t levelPercent = 0;
+  static float distanceCm = 0.0f;
+  static uint8_t levelPercent = 0;
+  static bool ready = false;
+  static bool error = false;
+  static uint8_t failCount = 0;
 
-    static unsigned long lastRead = 0;
-    static const unsigned long readInterval = 1000;
+  static unsigned long lastRead = 0;
+  static const unsigned long readInterval = 800;
 
-    void begin()
+  static void updateLevel()
+  {
+    auto &s = settings_manager::get();
+
+    if (s.tankEmptyCm <= s.tankFullCm + 1.0f)
     {
-        pinMode(Pins::ULTRASONIC_TRIG, OUTPUT);
-        pinMode(Pins::ULTRASONIC_ECHO, INPUT);
-        digitalWrite(Pins::ULTRASONIC_TRIG, LOW);
+      levelPercent = 0;
+      error = true;
+      return;
     }
 
-    void update()
+    float percent = ((s.tankEmptyCm - distanceCm) / (s.tankEmptyCm - s.tankFullCm)) * 100.0f;
+    percent = constrain(percent, 0.0f, 100.0f);
+    levelPercent = (uint8_t)(percent + 0.5f);
+    error = false;
+  }
+
+  void begin()
+  {
+    pinMode(Pins::ULTRASONIC_TRIG, OUTPUT);
+    pinMode(Pins::ULTRASONIC_ECHO, INPUT);
+    digitalWrite(Pins::ULTRASONIC_TRIG, LOW);
+  }
+
+  void update()
+  {
+    if (millis() - lastRead < readInterval)
     {
-        if (millis() - lastRead < readInterval) return;
-
-        lastRead = millis();
-
-        digitalWrite(Pins::ULTRASONIC_TRIG, LOW);
-        delayMicroseconds(2);
-        digitalWrite(Pins::ULTRASONIC_TRIG, HIGH);
-        delayMicroseconds(10);
-        digitalWrite(Pins::ULTRASONIC_TRIG, LOW);
-
-        unsigned long duration = pulseIn(Pins::ULTRASONIC_ECHO, HIGH, 30000);
-
-        if (duration == 0) return;
-
-        distanceCm = duration * 0.0343f / 2.0f;
-
-        auto &s = settings_manager::get();
-
-        if (s.tankEmptyCm == s.tankFullCm)
-        {
-            levelPercent = 0;
-            return;
-        }
-
-        float percent = ((s.tankEmptyCm - distanceCm) /
-                         (s.tankEmptyCm - s.tankFullCm)) *
-                        100.0f;
-
-        percent = constrain(percent, 0.0f, 100.0f);
-        levelPercent = (uint8_t)percent;
+      return;
     }
 
-    float getDistanceCm()
+    lastRead = millis();
+
+    digitalWrite(Pins::ULTRASONIC_TRIG, LOW);
+    delayMicroseconds(2);
+    digitalWrite(Pins::ULTRASONIC_TRIG, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(Pins::ULTRASONIC_TRIG, LOW);
+
+    unsigned long duration = pulseIn(Pins::ULTRASONIC_ECHO, HIGH, 25000UL);
+
+    if (duration == 0)
     {
-        return distanceCm;
+      failCount++;
+
+      if (failCount >= 3)
+      {
+        error = true;
+        ready = false;
+      }
+
+      return;
     }
 
-    uint8_t getLevelPercent()
-    {
-        return levelPercent;
-    }
+    failCount = 0;
+    ready = true;
+    distanceCm = duration * 0.0343f / 2.0f;
+    updateLevel();
+  }
 
-    bool isTankLow()
-    {
-        auto &s = settings_manager::get();
-        return levelPercent <= s.tankLowPercent;
-    }
+  float getDistanceCm()
+  {
+    return distanceCm;
+  }
 
-    bool isTankFull()
-    {
-        auto &s = settings_manager::get();
-        return levelPercent >= s.tankHighPercent;
-    }
+  uint8_t getLevelPercent()
+  {
+    return levelPercent;
+  }
+
+  bool isReady()
+  {
+    return ready && !error;
+  }
+
+  bool hasError()
+  {
+    return error;
+  }
+
+  bool isTankLow()
+  {
+    auto &s = settings_manager::get();
+    return isReady() && levelPercent <= s.tankLowPercent;
+  }
+
+  bool isTankFull()
+  {
+    auto &s = settings_manager::get();
+    return isReady() && levelPercent >= s.tankHighPercent;
+  }
 }

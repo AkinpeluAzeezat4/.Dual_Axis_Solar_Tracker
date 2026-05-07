@@ -11,9 +11,7 @@ namespace pump
   {
     pinMode(Pins::TANK_PUMP, OUTPUT);
     pinMode(Pins::IRRIGATION_PUMP, OUTPUT);
-
-    offTankPump();
-    offIrrigationPump();
+    allOff();
   }
 
   void update()
@@ -42,6 +40,12 @@ namespace pump
   {
     irrigationPumpState = false;
     Pins::writePin(Pins::IRRIGATION_PUMP, LOW);
+  }
+
+  void allOff()
+  {
+    offTankPump();
+    offIrrigationPump();
   }
 
   bool isTankPumpOn()

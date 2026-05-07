@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "ndelay.h"
 
 namespace ndelay
@@ -6,6 +7,7 @@ namespace ndelay
 
   void begin()
   {
+    startTime = 0;
   }
 
   void update()
@@ -28,8 +30,29 @@ namespace ndelay
     return false;
   }
 
+  bool millis_time(unsigned long &timer, unsigned long timeFrame)
+  {
+    unsigned long now = millis();
+
+    if (timer == 0)
+      timer = now;
+
+    if (now - timer >= timeFrame)
+    {
+      timer = now;
+      return true;
+    }
+
+    return false;
+  }
+
   void millis_reset()
   {
     startTime = 0;
+  }
+
+  void millis_reset(unsigned long &timer)
+  {
+    timer = 0;
   }
 }

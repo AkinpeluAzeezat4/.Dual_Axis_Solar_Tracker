@@ -12,7 +12,7 @@
 #include "temp_hum/temp_hum.h"
 #include "rtc_clock/rtc_clock.h"
 #include "lcd_screen/lcd_screen.h"
-#include "WiFi/WiFi.h"
+#include "wifi_manager/wifi_manager.h"
 #include "web_dashboard/web_dashboard.h"
 #include "sleep_wake/sleep_wake.h"
 #include "error_handling/error_handling.h"

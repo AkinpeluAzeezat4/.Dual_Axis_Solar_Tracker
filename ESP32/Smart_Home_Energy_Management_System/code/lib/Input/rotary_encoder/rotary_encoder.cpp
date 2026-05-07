@@ -1,6 +1,6 @@
 #include <Arduino.h>
-#include "rotary_encoder.h"
 #include "Pins.h"
+#include "rotary_encoder.h"
 
 namespace rotary_encoder
 {

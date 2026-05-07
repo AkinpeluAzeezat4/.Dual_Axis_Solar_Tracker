@@ -1,5 +1,4 @@
 #pragma once
-#include <Arduino.h>
 
 namespace shared_var
 {

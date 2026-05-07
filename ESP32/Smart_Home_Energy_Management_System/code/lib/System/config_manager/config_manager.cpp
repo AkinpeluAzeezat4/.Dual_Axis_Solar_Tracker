@@ -5,35 +5,44 @@
 namespace config_manager
 {
   Preferences prefs;
+
   int relayPower[6] = {500, 700, 900, 1200, 1500, 2000};
   int inverterPower = 5000;
-  int systemPower = 6000;
   int loadMarginPercent = 90;
+
   bool configured = false;
 
   int clampValue(int value, int low, int high)
   {
-    if (value < low) return low;
-    if (value > high) return high;
+    if (value < low)
+      return low;
+
+    if (value > high)
+      return high;
+
     return value;
   }
 
   void begin()
   {
     prefs.begin("shems", false);
+
     configured = prefs.getBool("configured", false);
 
     for (int i = 0; i < 6; i++)
     {
       char key[8];
       snprintf(key, sizeof(key), "r%d", i + 1);
+
       relayPower[i] = prefs.getInt(key, relayPower[i]);
-      relayPower[i] = clampValue(relayPower[i], 0, 4000);
+      relayPower[i] = clampValue(relayPower[i], 0, 10000);
     }
 
-    inverterPower = clampValue(prefs.getInt("inv", inverterPower), 500, 20000);
-    systemPower = clampValue(prefs.getInt("sys", systemPower), 0, 30000);
-    loadMarginPercent = clampValue(prefs.getInt("margin", loadMarginPercent), 50, 100);
+    inverterPower = prefs.getInt("inv", inverterPower);
+    loadMarginPercent = prefs.getInt("margin", loadMarginPercent);
+
+    inverterPower = clampValue(inverterPower, 100, 50000);
+    loadMarginPercent = clampValue(loadMarginPercent, 50, 100);
   }
 
   void update()
@@ -46,12 +55,17 @@ namespace config_manager
     {
       char key[8];
       snprintf(key, sizeof(key), "r%d", i + 1);
+
+      relayPower[i] = clampValue(relayPower[i], 0, 10000);
       prefs.putInt(key, relayPower[i]);
     }
 
+    inverterPower = clampValue(inverterPower, 100, 50000);
+    loadMarginPercent = clampValue(loadMarginPercent, 50, 100);
+
     prefs.putInt("inv", inverterPower);
-    prefs.putInt("sys", systemPower);
     prefs.putInt("margin", loadMarginPercent);
+
     prefs.putBool("configured", true);
     configured = true;
   }
@@ -64,22 +78,27 @@ namespace config_manager
     relayPower[3] = 1200;
     relayPower[4] = 1500;
     relayPower[5] = 2000;
+
     inverterPower = 5000;
-    systemPower = 6000;
     loadMarginPercent = 90;
+
     save();
   }
 
   int getRelayPower(uint8_t index)
   {
-    if (index >= 6) return 0;
+    if (index >= 6)
+      return 0;
+
     return relayPower[index];
   }
 
   void setRelayPower(uint8_t index, int value)
   {
-    if (index >= 6) return;
-    relayPower[index] = clampValue(value, 0, 4000);
+    if (index >= 6)
+      return;
+
+    relayPower[index] = clampValue(value, 0, 10000);
   }
 
   int getInverterPower()
@@ -89,17 +108,7 @@ namespace config_manager
 
   void setInverterPower(int value)
   {
-    inverterPower = clampValue(value, 500, 20000);
-  }
-
-  int getSystemPower()
-  {
-    return systemPower;
-  }
-
-  void setSystemPower(int value)
-  {
-    systemPower = clampValue(value, 0, 30000);
+    inverterPower = clampValue(value, 100, 50000);
   }
 
   int getLoadMarginPercent()
@@ -115,5 +124,11 @@ namespace config_manager
   bool isConfigured()
   {
     return configured;
+  }
+
+  void setConfigured(bool state)
+  {
+    configured = state;
+    prefs.putBool("configured", configured);
   }
 }

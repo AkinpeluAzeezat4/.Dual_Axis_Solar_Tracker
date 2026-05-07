@@ -5,11 +5,10 @@ namespace error_handling
   enum ErrorCode
   {
     NO_ERROR,
-    PHCN_UNAVAILABLE,
-    INVERTER_UNAVAILABLE,
-    OVERLOAD,
-    SENSOR_ERROR,
-    RELAY_ERROR
+    PCA9555_ERROR,
+    PZEM_ERROR,
+    NO_SOURCE_ERROR,
+    OVERLOAD_ERROR
   };
 
   void begin();
@@ -17,6 +16,7 @@ namespace error_handling
 
   void setError(ErrorCode error);
   void clearError();
+
   bool hasError();
   ErrorCode getError();
 }

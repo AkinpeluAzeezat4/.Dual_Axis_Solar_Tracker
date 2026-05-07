@@ -4,10 +4,18 @@ namespace pzem_sensor
 {
   void begin();
   void update();
+
   float getVoltage();
   float getCurrent();
   float getPower();
   float getEnergy();
+  float getFrequency();
+  float getPowerFactor();
+
   int getTotalPower();
-  void setSimulatedPower(int watts);
+
+  bool isReady();
+  bool hasValidData();
+
+  void resetEnergy();
 }

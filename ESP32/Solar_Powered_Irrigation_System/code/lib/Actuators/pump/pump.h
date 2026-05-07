@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 
 namespace pump
 {
@@ -10,6 +11,8 @@ namespace pump
 
   void onIrrigationPump();
   void offIrrigationPump();
+
+  void allOff();
 
   bool isTankPumpOn();
   bool isIrrigationPumpOn();

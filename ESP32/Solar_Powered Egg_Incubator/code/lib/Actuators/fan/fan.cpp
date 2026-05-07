@@ -14,14 +14,7 @@ namespace fan
       return;
     }
 
-    if (relayActiveLow)
-    {
-      digitalWrite(fanPin, fanState ? LOW : HIGH);
-    }
-    else
-    {
-      digitalWrite(fanPin, fanState ? HIGH : LOW);
-    }
+    digitalWrite(fanPin, relayActiveLow ? !fanState : fanState);
   }
 
   void begin(uint8_t pin, bool activeLow)
@@ -40,14 +33,12 @@ namespace fan
 
   void on()
   {
-    fanState = true;
-    writeOutput();
+    set(true);
   }
 
   void off()
   {
-    fanState = false;
-    writeOutput();
+    set(false);
   }
 
   void set(bool state)

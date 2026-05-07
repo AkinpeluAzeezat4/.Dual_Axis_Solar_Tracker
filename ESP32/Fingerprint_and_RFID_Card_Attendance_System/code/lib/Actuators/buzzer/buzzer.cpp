@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "buzzer.h"
-#include "Pins/Pins.h"
+#include "Pins.h"
 
 namespace buzzer
 {
@@ -38,9 +38,10 @@ namespace buzzer
 
     pinMode(pin, OUTPUT);
     Pins::writePin(pin, LOW);
+
     active = false;
-    resetPattern();
     alarmRunning = false;
+    resetPattern();
   }
 
   void update()

@@ -16,6 +16,12 @@ namespace sd_card
 
   String readFile(const String &path, size_t maxBytes);
   String getConfigValue(const String &key, const String &fallback);
+  bool saveConfig(const String &systemName,
+                  const String &workspaceName,
+                  const String &workspaceType,
+                  const String &apSsid,
+                  const String &apPassword,
+                  const String &defaultMode);
 
   uint32_t countDataLines(const String &path);
 

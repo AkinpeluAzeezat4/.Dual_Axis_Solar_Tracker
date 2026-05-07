@@ -17,12 +17,14 @@ namespace settings_manager
 
     data.batteryEmptyV = 3.20f;
     data.batteryFullV = 4.20f;
+    data.batteryScaleFactor = 2.0f;
 
-    data.tankLowPercent = 35;
+    data.tankLowPercent = 25;
     data.tankHighPercent = 90;
     data.soilDryPercent = 35;
+    data.batteryLowPercent = 15;
 
-    data.irrigationRunSeconds = 10;
+    data.irrigationRunSeconds = 15;
     data.irrigationPauseSeconds = 60;
     data.tankPumpMaxMinutes = 8;
 
@@ -50,12 +52,14 @@ namespace settings_manager
 
     data.batteryEmptyV = prefs.getFloat("batEmpty", 3.20f);
     data.batteryFullV = prefs.getFloat("batFull", 4.20f);
+    data.batteryScaleFactor = prefs.getFloat("batScale", 2.0f);
 
-    data.tankLowPercent = prefs.getUShort("tankLow", 35);
+    data.tankLowPercent = prefs.getUShort("tankLow", 25);
     data.tankHighPercent = prefs.getUShort("tankHigh", 90);
     data.soilDryPercent = prefs.getUShort("soilPct", 35);
+    data.batteryLowPercent = prefs.getUShort("batLowPct", 15);
 
-    data.irrigationRunSeconds = prefs.getUShort("irrRun", 10);
+    data.irrigationRunSeconds = prefs.getUShort("irrRun", 15);
     data.irrigationPauseSeconds = prefs.getUShort("irrPause", 60);
     data.tankPumpMaxMinutes = prefs.getUShort("pumpMax", 8);
 
@@ -72,10 +76,12 @@ namespace settings_manager
 
     prefs.putFloat("batEmpty", data.batteryEmptyV);
     prefs.putFloat("batFull", data.batteryFullV);
+    prefs.putFloat("batScale", data.batteryScaleFactor);
 
     prefs.putUShort("tankLow", data.tankLowPercent);
     prefs.putUShort("tankHigh", data.tankHighPercent);
     prefs.putUShort("soilPct", data.soilDryPercent);
+    prefs.putUShort("batLowPct", data.batteryLowPercent);
 
     prefs.putUShort("irrRun", data.irrigationRunSeconds);
     prefs.putUShort("irrPause", data.irrigationPauseSeconds);

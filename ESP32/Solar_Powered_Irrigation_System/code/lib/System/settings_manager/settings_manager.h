@@ -13,10 +13,12 @@ namespace settings_manager
 
     float batteryEmptyV;
     float batteryFullV;
+    float batteryScaleFactor;
 
     uint16_t tankLowPercent;
     uint16_t tankHighPercent;
     uint16_t soilDryPercent;
+    uint16_t batteryLowPercent;
 
     uint16_t irrigationRunSeconds;
     uint16_t irrigationPauseSeconds;

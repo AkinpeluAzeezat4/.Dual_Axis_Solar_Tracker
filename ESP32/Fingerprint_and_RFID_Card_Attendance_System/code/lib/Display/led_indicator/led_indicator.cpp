@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "led_indicator.h"
-#include "Pins/Pins.h"
+#include "Pins.h"
 
 namespace led_indicator
 {
@@ -59,7 +59,6 @@ namespace led_indicator
         return;
 
       lastUpdate = now;
-
       brightness += rising ? 4 : -4;
 
       if (brightness >= 255)

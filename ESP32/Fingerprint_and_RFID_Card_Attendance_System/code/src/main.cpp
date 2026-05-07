@@ -12,7 +12,7 @@
 #include "error_handling/error_handling.h"
 #include "sleep_wake/sleep_wake.h"
 #include "reset/reset.h"
-#include "WiFi/wifi_manager.h"
+#include "wifi_manager/wifi_manager.h"
 #include "local_server/local_server.h"
 #include "attendance_manager/attendance_manager.h"
 #include "keyboard_input/keyboard_input.h"
@@ -54,7 +54,7 @@ void setup()
 
   Serial.println();
   Serial.println("Fingerprint RFID Attendance System Prototype");
-  Serial.println("Two-way authentication: RFID card + fingerprint");
+  Serial.println("Verification: RFID card AND fingerprint");
   Serial.println("AP SSID: " + wifi_manager::getSSID());
   Serial.println("AP PASS: " + wifi_manager::getPassword());
   Serial.println("Web URL: http://" + wifi_manager::getIpString());

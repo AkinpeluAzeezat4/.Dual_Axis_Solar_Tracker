@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include "RFID.h"
-#include "Pins.h"
+#include "Pins/Pins.h"
 
 namespace RFID
 {
@@ -70,6 +70,9 @@ namespace RFID
 
     if (!ready)
       return false;
+
+    if (Pins::valid(Pins::SD_CARD_CS))
+      digitalWrite(Pins::SD_CARD_CS, HIGH);
 
     digitalWrite(Pins::RC522_SS, LOW);
 

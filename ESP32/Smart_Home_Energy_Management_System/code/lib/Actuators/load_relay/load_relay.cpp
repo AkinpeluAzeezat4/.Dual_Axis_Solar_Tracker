@@ -1,50 +1,70 @@
 #include <Arduino.h>
 #include "Pins.h"
+#include "gpio_expander/gpio_expander.h"
 #include "load_relay.h"
 
 namespace load_relay
 {
-  const uint8_t relayPins[6] = {
-      Pins::RELAY_1,
-      Pins::RELAY_2,
-      Pins::RELAY_3,
-      Pins::RELAY_4,
-      Pins::RELAY_5,
-      Pins::RELAY_6};
+  const uint8_t sourcePins[6] = {
+      Pins::EXP_RELAY_1_SOURCE,
+      Pins::EXP_RELAY_2_SOURCE,
+      Pins::EXP_RELAY_3_SOURCE,
+      Pins::EXP_RELAY_4_SOURCE,
+      Pins::EXP_RELAY_5_SOURCE,
+      Pins::EXP_RELAY_6_SOURCE};
 
-  bool relayState[6] = {true, true, true, true, true, true};
-  bool relayDirty = true;
+  const uint8_t loadPins[6] = {
+      Pins::EXP_RELAY_1_LOAD,
+      Pins::EXP_RELAY_2_LOAD,
+      Pins::EXP_RELAY_3_LOAD,
+      Pins::EXP_RELAY_4_LOAD,
+      Pins::EXP_RELAY_5_LOAD,
+      Pins::EXP_RELAY_6_LOAD};
 
-  const bool relayActiveHigh = true;
+  bool onInverterState[6] = {true, true, true, true, true, true};
+  bool loadEnabledState[6] = {true, true, true, true, true, true};
 
-  void writeRelay(int index)
+  bool dirty = true;
+
+  void applyRelay(int index)
   {
-    if (relayActiveHigh)
-      digitalWrite(relayPins[index], relayState[index] ? HIGH : LOW);
-    else
-      digitalWrite(relayPins[index], relayState[index] ? LOW : HIGH);
+    if (!gpio_expander::isReady())
+      return;
+
+    bool sourceRelayEnergized = !onInverterState[index];
+    bool loadRelayEnergized = loadEnabledState[index];
+
+    gpio_expander::digitalWrite(sourcePins[index], sourceRelayEnergized);
+    gpio_expander::digitalWrite(loadPins[index], loadRelayEnergized);
   }
 
   void begin()
   {
+    if (!gpio_expander::isReady())
+      return;
+
     for (int i = 0; i < 6; i++)
     {
-      pinMode(relayPins[i], OUTPUT);
-      writeRelay(i);
+      gpio_expander::pinMode(sourcePins[i], OUTPUT);
+      gpio_expander::pinMode(loadPins[i], OUTPUT);
     }
 
-    relayDirty = false;
+    dirty = true;
+    update();
   }
 
   void update()
   {
-    if (!relayDirty)
+    if (!dirty)
+      return;
+
+    if (!gpio_expander::isReady())
       return;
 
     for (int i = 0; i < 6; i++)
-      writeRelay(i);
+      applyRelay(i);
 
-    relayDirty = false;
+    dirty = false;
   }
 
   void setRelay(int relay, bool onInverter)
@@ -52,10 +72,22 @@ namespace load_relay
     if (relay < 0 || relay > 5)
       return;
 
-    if (relayState[relay] != onInverter)
+    if (onInverterState[relay] != onInverter)
     {
-      relayState[relay] = onInverter;
-      relayDirty = true;
+      onInverterState[relay] = onInverter;
+      dirty = true;
+    }
+  }
+
+  void setLoadEnabled(int relay, bool enabled)
+  {
+    if (relay < 0 || relay > 5)
+      return;
+
+    if (loadEnabledState[relay] != enabled)
+    {
+      loadEnabledState[relay] = enabled;
+      dirty = true;
     }
   }
 
@@ -71,41 +103,38 @@ namespace load_relay
       setRelay(i, false);
   }
 
+  void enableAllLoads()
+  {
+    for (int i = 0; i < 6; i++)
+      setLoadEnabled(i, true);
+  }
+
+  void disableAllLoads()
+  {
+    for (int i = 0; i < 6; i++)
+      setLoadEnabled(i, false);
+  }
+
   bool isOnInverter(int relay)
   {
     if (relay < 0 || relay > 5)
       return false;
 
-    return relayState[relay];
+    return onInverterState[relay];
   }
 
-  bool getRelay1()
+  bool isLoadEnabled(int relay)
   {
-    return relayState[0];
+    if (relay < 0 || relay > 5)
+      return false;
+
+    return loadEnabledState[relay];
   }
 
-  bool getRelay2()
-  {
-    return relayState[1];
-  }
-
-  bool getRelay3()
-  {
-    return relayState[2];
-  }
-
-  bool getRelay4()
-  {
-    return relayState[3];
-  }
-
-  bool getRelay5()
-  {
-    return relayState[4];
-  }
-
-  bool getRelay6()
-  {
-    return relayState[5];
-  }
+  bool getRelay1() { return onInverterState[0]; }
+  bool getRelay2() { return onInverterState[1]; }
+  bool getRelay3() { return onInverterState[2]; }
+  bool getRelay4() { return onInverterState[3]; }
+  bool getRelay5() { return onInverterState[4]; }
+  bool getRelay6() { return onInverterState[5]; }
 }

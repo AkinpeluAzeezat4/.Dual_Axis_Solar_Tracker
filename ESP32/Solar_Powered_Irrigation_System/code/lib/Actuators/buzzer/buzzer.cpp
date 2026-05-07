@@ -4,17 +4,15 @@
 
 namespace buzzer
 {
-  static uint8_t BUZZER_PIN = Pins::BUZZER;
   static bool active = false;
   static bool beeping = false;
-
   static unsigned long beepStart = 0;
   static unsigned long beepDuration = 0;
 
   void begin()
   {
-    pinMode(BUZZER_PIN, OUTPUT);
-    Pins::writePin(BUZZER_PIN, LOW);
+    pinMode(Pins::BUZZER, OUTPUT);
+    Pins::writePin(Pins::BUZZER, LOW);
   }
 
   void update()
@@ -29,21 +27,23 @@ namespace buzzer
   void on()
   {
     active = true;
-    Pins::writePin(BUZZER_PIN, HIGH);
+    Pins::writePin(Pins::BUZZER, HIGH);
   }
 
   void off()
   {
     active = false;
-    Pins::writePin(BUZZER_PIN, LOW);
+    Pins::writePin(Pins::BUZZER, LOW);
   }
 
-  void beep(uint16_t duration_ms)
+  void beep(uint16_t durationMs)
   {
     if (beeping)
+    {
       return;
+    }
 
-    beepDuration = duration_ms;
+    beepDuration = durationMs;
     beepStart = millis();
     beeping = true;
     on();

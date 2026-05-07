@@ -3,12 +3,14 @@
 
 namespace ultrasonic
 {
-    void begin();
-    void update();
+  void begin();
+  void update();
 
-    float getDistanceCm();
-    uint8_t getLevelPercent();
+  float getDistanceCm();
+  uint8_t getLevelPercent();
 
-    bool isTankLow();
-    bool isTankFull();
+  bool isReady();
+  bool hasError();
+  bool isTankLow();
+  bool isTankFull();
 }

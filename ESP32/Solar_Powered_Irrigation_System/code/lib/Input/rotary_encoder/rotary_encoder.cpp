@@ -8,15 +8,16 @@ namespace rotary_encoder
   static int lastPosition = 0;
 
   static bool lastA = HIGH;
-  static bool buttonState = false;
-  static bool lastButtonState = false;
+  static bool stableButtonState = false;
+  static bool lastReading = false;
   static bool clicked = false;
   static bool longPressed = false;
+  static bool longPressLatched = false;
 
   static unsigned long pressStart = 0;
+  static unsigned long lastButtonChange = 0;
   static const unsigned long debounceTime = 40;
   static const unsigned long longPressTime = 5000;
-  static unsigned long lastButtonChange = 0;
 
   void begin()
   {
@@ -25,6 +26,8 @@ namespace rotary_encoder
     pinMode(Pins::ENCODER_SW, INPUT_PULLUP);
 
     lastA = digitalRead(Pins::ENCODER_CLK);
+    lastReading = digitalRead(Pins::ENCODER_SW) == LOW;
+    stableButtonState = lastReading;
   }
 
   void update()
@@ -38,41 +41,52 @@ namespace rotary_encoder
     if (A != lastA)
     {
       if (A == B)
+      {
         position++;
+      }
       else
+      {
         position--;
+      }
 
       lastA = A;
     }
 
     bool reading = digitalRead(Pins::ENCODER_SW) == LOW;
 
-    if (reading != lastButtonState)
+    if (reading != lastReading)
     {
+      lastReading = reading;
       lastButtonChange = millis();
-      lastButtonState = reading;
     }
 
     if ((millis() - lastButtonChange) > debounceTime)
     {
-      if (reading != buttonState)
+      if (reading != stableButtonState)
       {
-        buttonState = reading;
+        stableButtonState = reading;
 
-        if (buttonState)
+        if (stableButtonState)
         {
           pressStart = millis();
+          longPressLatched = false;
         }
         else
         {
           unsigned long pressDuration = millis() - pressStart;
 
-          if (pressDuration >= longPressTime)
-            longPressed = true;
-          else
+          if (pressDuration < longPressTime && !longPressLatched)
+          {
             clicked = true;
+          }
         }
       }
+    }
+
+    if (stableButtonState && !longPressLatched && millis() - pressStart >= longPressTime)
+    {
+      longPressLatched = true;
+      longPressed = true;
     }
   }
 
@@ -90,7 +104,7 @@ namespace rotary_encoder
 
   bool isPressed()
   {
-    return buttonState;
+    return stableButtonState;
   }
 
   bool wasClicked()

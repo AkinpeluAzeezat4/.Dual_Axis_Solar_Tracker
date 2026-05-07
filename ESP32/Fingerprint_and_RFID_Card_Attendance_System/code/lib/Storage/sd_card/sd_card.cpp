@@ -18,6 +18,18 @@ namespace sd_card
     return value;
   }
 
+  static String cleanConfigField(String value)
+  {
+    value.trim();
+    value.replace("\r", " ");
+    value.replace("\n", " ");
+
+    if (value.length() == 0)
+      value = "-";
+
+    return value;
+  }
+
   static String csvPart(const String &line, uint8_t index)
   {
     int start = 0;
@@ -188,6 +200,42 @@ namespace sd_card
     file.close();
 
     return fallback;
+  }
+
+  bool saveConfig(const String &systemName,
+                  const String &workspaceName,
+                  const String &workspaceType,
+                  const String &apSsid,
+                  const String &apPassword,
+                  const String &defaultMode)
+  {
+    String mode = defaultMode;
+    mode.toUpperCase();
+
+    if (mode != "OUT")
+      mode = "IN";
+
+    String ssid = apSsid;
+    ssid.trim();
+
+    String pass = apPassword;
+    pass.trim();
+
+    if (ssid.length() < 1 || ssid.length() > 32)
+      ssid = "AttendanceSystem";
+
+    if (pass.length() < 8 || pass.length() > 63)
+      pass = "12345678";
+
+    String content;
+    content += "system_name=" + cleanConfigField(systemName) + "\n";
+    content += "workspace_name=" + cleanConfigField(workspaceName) + "\n";
+    content += "workspace_type=" + cleanConfigField(workspaceType) + "\n";
+    content += "ap_ssid=" + ssid + "\n";
+    content += "ap_password=" + pass + "\n";
+    content += "default_mode=" + mode + "\n";
+
+    return writeFile(configPath, content);
   }
 
   uint32_t countDataLines(const String &path)

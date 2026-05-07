@@ -4,7 +4,7 @@
 #include "local_server.h"
 #include "attendance_manager/attendance_manager.h"
 #include "sd_card/sd_card.h"
-#include "WiFi/wifi_manager.h"
+#include "wifi_manager/wifi_manager.h"
 
 namespace local_server
 {
@@ -38,18 +38,21 @@ namespace local_server
     html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
     html += "<title>" + htmlEscape(title) + "</title>";
     html += "<style>";
-    html += "body{font-family:Arial,sans-serif;margin:18px;max-width:900px}";
-    html += "input,select,button{padding:8px;margin:4px 0;width:100%;box-sizing:border-box}";
-    html += "button{cursor:pointer}";
-    html += "a{display:inline-block;margin:6px 8px 6px 0}";
-    html += ".card{border:1px solid #ccc;border-radius:10px;padding:12px;margin:12px 0}";
-    html += "pre{white-space:pre-wrap;background:#f5f5f5;padding:10px;border-radius:8px;overflow:auto}";
+    html += "body{font-family:Arial,sans-serif;margin:18px;max-width:900px;background:#f9fafb;color:#111827}";
+    html += "input,select,button{padding:9px;margin:4px 0;width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:8px}";
+    html += "button{cursor:pointer;background:#2563eb;color:white;border:0;font-weight:bold}";
+    html += ".danger{background:#dc2626}";
+    html += "a{display:inline-block;margin:6px 8px 6px 0;color:#2563eb;text-decoration:none}";
+    html += ".card{background:white;border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin:12px 0;box-shadow:0 2px 8px #0001}";
+    html += "pre{white-space:pre-wrap;background:#f3f4f6;padding:10px;border-radius:8px;overflow:auto;font-size:12px}";
+    html += ".muted{color:#6b7280;font-size:13px}";
     html += "</style>";
     html += "</head><body>";
     html += "<h2>" + htmlEscape(title) + "</h2>";
     html += "<a href='/'>Home</a>";
     html += "<a href='/users'>Users</a>";
     html += "<a href='/attendance'>Attendance</a>";
+    html += "<a href='/config'>Config</a>";
     html += "<a href='/api/status'>Status API</a>";
     return html;
   }
@@ -59,11 +62,24 @@ namespace local_server
     return "</body></html>";
   }
 
+  static String optionTag(const String &value, const String &label, const String &selected)
+  {
+    String html = "<option value='" + htmlEscape(value) + "'";
+
+    if (value == selected)
+      html += " selected";
+
+    html += ">" + htmlEscape(label) + "</option>";
+    return html;
+  }
+
   static void handleRoot()
   {
     String html = pageHead("Fingerprint RFID Attendance");
 
     html += "<div class='card'>";
+    html += "<b>System:</b> " + htmlEscape(sd_card::getConfigValue("system_name", "Attendance System")) + "<br>";
+    html += "<b>Workspace:</b> " + htmlEscape(sd_card::getConfigValue("workspace_name", "Main")) + "<br>";
     html += "<b>Device IP:</b> " + htmlEscape(wifi_manager::getIpString()) + "<br>";
     html += "<b>Mode:</b> " + htmlEscape(attendance_manager::getModeText()) + "<br>";
     html += "<b>Users:</b> " + String(attendance_manager::getUserCount()) + "<br>";
@@ -87,14 +103,22 @@ namespace local_server
     html += "<button type='submit'>Set Mode</button>";
     html += "</form></div>";
 
-    html += "<div class='card'><h3>Register User</h3>";
+    html += "<div class='card'><h3>Add / Register User</h3>";
     html += "<form action='/enroll' method='get'>";
     html += "<input name='id' placeholder='User ID e.g. STU001' required>";
     html += "<input name='name' placeholder='Full name' required>";
     html += "<input name='workspace' placeholder='Class / Department / Workspace' value='Main'>";
     html += "<button type='submit'>Start Registration</button>";
     html += "</form>";
-    html += "<p>After starting registration, tap the RFID card and place the finger when the OLED asks.</p>";
+    html += "<p class='muted'>After starting registration, tap RFID card, then place the finger when OLED asks.</p>";
+    html += "</div>";
+
+    html += "<div class='card'><h3>Remove User</h3>";
+    html += "<form action='/delete-user' method='get'>";
+    html += "<input name='id' placeholder='User ID e.g. STU001' required>";
+    html += "<button class='danger' type='submit'>Delete User</button>";
+    html += "</form>";
+    html += "<p class='muted'>This removes the user from SD card, unlinks the RFID card, and deletes the fingerprint template.</p>";
     html += "</div>";
 
     html += "<div class='card'><h3>Downloads</h3>";
@@ -151,14 +175,22 @@ namespace local_server
     if (!sd_card::isReady())
       html += "<div class='card'>SD card not ready.</div>";
     else
-      html += "<pre>" + htmlEscape(sd_card::readFile("/users.csv", 18000)) + "</pre>";
+      html += "<pre>" + htmlEscape(sd_card::readFile("/users.csv", 22000)) + "</pre>";
 
-    html += "<div class='card'><h3>Delete User</h3>";
+    html += "<div class='card'><h3>Add User</h3>";
+    html += "<form action='/enroll' method='get'>";
+    html += "<input name='id' placeholder='User ID e.g. STU001' required>";
+    html += "<input name='name' placeholder='Full name' required>";
+    html += "<input name='workspace' placeholder='Class / Department / Workspace' value='Main'>";
+    html += "<button type='submit'>Start Registration</button>";
+    html += "</form></div>";
+
+    html += "<div class='card'><h3>Remove User</h3>";
     html += "<form action='/delete-user' method='get'>";
     html += "<input name='id' placeholder='User ID e.g. STU001' required>";
-    html += "<button type='submit'>Delete User</button>";
+    html += "<button class='danger' type='submit'>Delete User</button>";
     html += "</form>";
-    html += "<p>This removes the user, RFID card link, and fingerprint template.</p>";
+    html += "<p class='muted'>This removes the user, RFID card link, and fingerprint template.</p>";
     html += "</div>";
 
     html += pageEnd();
@@ -194,15 +226,69 @@ namespace local_server
     if (!sd_card::isReady())
       html += "<div class='card'>SD card not ready.</div>";
     else
-      html += "<pre>" + htmlEscape(sd_card::readFile("/attendance.csv", 24000)) + "</pre>";
+      html += "<pre>" + htmlEscape(sd_card::readFile("/attendance.csv", 30000)) + "</pre>";
 
     html += "<form action='/clear-attendance' method='get'>";
     html += "<input type='hidden' name='confirm' value='yes'>";
-    html += "<button type='submit'>Clear Attendance Log</button>";
+    html += "<button class='danger' type='submit'>Clear Attendance Log</button>";
     html += "</form>";
 
     html += pageEnd();
     server.send(200, "text/html", html);
+  }
+
+  static void handleConfig()
+  {
+    String systemName = sd_card::getConfigValue("system_name", "Fingerprint RFID Attendance System");
+    String workspaceName = sd_card::getConfigValue("workspace_name", "Prototype Workspace");
+    String workspaceType = sd_card::getConfigValue("workspace_type", "school");
+    String apSsid = sd_card::getConfigValue("ap_ssid", "AttendanceSystem");
+    String apPassword = sd_card::getConfigValue("ap_password", "12345678");
+    String defaultMode = sd_card::getConfigValue("default_mode", "IN");
+    defaultMode.toUpperCase();
+
+    String html = pageHead("System Configuration");
+    html += "<div class='card'>";
+    html += "<form action='/save-config' method='get'>";
+    html += "<label>System Name</label><input name='system_name' value='" + htmlEscape(systemName) + "'>";
+    html += "<label>Workspace / School Name</label><input name='workspace_name' value='" + htmlEscape(workspaceName) + "'>";
+    html += "<label>System Type</label><select name='workspace_type'>";
+    html += optionTag("school", "School", workspaceType);
+    html += optionTag("workspace", "Workspace", workspaceType);
+    html += "</select>";
+    html += "<label>Default Attendance Mode</label><select name='default_mode'>";
+    html += optionTag("IN", "Clock In", defaultMode);
+    html += optionTag("OUT", "Clock Out", defaultMode);
+    html += "</select>";
+    html += "<label>Access Point SSID</label><input name='ap_ssid' value='" + htmlEscape(apSsid) + "'>";
+    html += "<label>Access Point Password</label><input name='ap_password' value='" + htmlEscape(apPassword) + "'>";
+    html += "<button type='submit'>Save Configuration</button>";
+    html += "</form>";
+    html += "<p class='muted'>If Wi-Fi name or password is changed, restart the device after saving.</p>";
+    html += "</div>";
+    html += pageEnd();
+
+    server.send(200, "text/html", html);
+  }
+
+  static void handleSaveConfig()
+  {
+    bool ok = sd_card::saveConfig(server.arg("system_name"),
+                                  server.arg("workspace_name"),
+                                  server.arg("workspace_type"),
+                                  server.arg("ap_ssid"),
+                                  server.arg("ap_password"),
+                                  server.arg("default_mode"));
+
+    String html = pageHead("Save Configuration");
+    html += "<div class='card'>";
+    html += ok ? "Configuration saved." : "Configuration save failed.";
+    html += "<br><span class='muted'>Restart the device if AP settings were changed.</span>";
+    html += "</div>";
+    html += "<a href='/config'>Back to Config</a>";
+    html += pageEnd();
+
+    server.send(ok ? 200 : 500, "text/html", html);
   }
 
   static void handleDownload()
@@ -294,6 +380,8 @@ namespace local_server
     server.on("/users", handleUsers);
     server.on("/delete-user", handleDeleteUser);
     server.on("/attendance", handleAttendance);
+    server.on("/config", handleConfig);
+    server.on("/save-config", handleSaveConfig);
     server.on("/download", handleDownload);
     server.on("/clear-attendance", handleClearAttendance);
     server.on("/api/status", handleStatusApi);

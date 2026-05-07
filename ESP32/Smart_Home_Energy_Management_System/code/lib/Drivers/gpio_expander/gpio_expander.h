@@ -24,4 +24,5 @@ namespace gpio_expander
 
   uint16_t getOutputState();
   uint16_t getInputState();
+  uint16_t getConfigState();
 }

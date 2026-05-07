@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include "Pins.h"
 #include "gpio_expander.h"
 
 namespace gpio_expander
@@ -13,7 +14,7 @@ namespace gpio_expander
   const uint8_t REG_CONFIG_0 = 0x06;
   const uint8_t REG_CONFIG_1 = 0x07;
 
-  uint8_t deviceAddress = 0x20;
+  uint8_t deviceAddress = Pins::PCA9555_ADDRESS;
 
   uint16_t outputState = 0x0000;
   uint16_t inputState = 0x0000;
@@ -67,36 +68,39 @@ namespace gpio_expander
 
   void applyConfig()
   {
+    if (!ready)
+      return;
+
     writeWord(REG_CONFIG_0, configState);
   }
 
   void applyOutput()
   {
-    writeWord(REG_OUTPUT_0, outputState);
-  }
-
-  void begin()
-  {
-    Wire.begin();
-
-    ready = testConnection();
-
     if (!ready)
       return;
 
+    writeWord(REG_OUTPUT_0, outputState);
+  }
+
+  void configureDefaultHardware()
+  {
     writeWord(REG_POLARITY_0, 0x0000);
 
-    configState = 0xFFFF;
+    configState = 0xE000;
     outputState = 0x0000;
 
     applyOutput();
     applyConfig();
   }
 
+  void begin()
+  {
+    begin(Pins::PCA9555_ADDRESS, Pins::I2C_SDA, Pins::I2C_SCL);
+  }
+
   void begin(uint8_t address)
   {
-    deviceAddress = address;
-    begin();
+    begin(address, Pins::I2C_SDA, Pins::I2C_SCL);
   }
 
   void begin(uint8_t address, int sdaPin, int sclPin)
@@ -104,19 +108,14 @@ namespace gpio_expander
     deviceAddress = address;
 
     Wire.begin(sdaPin, sclPin);
+    Wire.setClock(100000);
 
     ready = testConnection();
 
     if (!ready)
       return;
 
-    writeWord(REG_POLARITY_0, 0x0000);
-
-    configState = 0xFFFF;
-    outputState = 0x0000;
-
-    applyOutput();
-    applyConfig();
+    configureDefaultHardware();
   }
 
   void update()
@@ -221,5 +220,10 @@ namespace gpio_expander
   uint16_t getInputState()
   {
     return inputState;
+  }
+
+  uint16_t getConfigState()
+  {
+    return configState;
   }
 }

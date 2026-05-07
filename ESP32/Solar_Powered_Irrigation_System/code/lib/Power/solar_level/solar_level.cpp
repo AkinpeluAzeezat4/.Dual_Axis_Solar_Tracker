@@ -4,46 +4,55 @@
 
 namespace solar_level
 {
-    static float voltage = 0.0f;
+  static float voltage = 0.0f;
+  static bool ready = false;
 
-    static unsigned long lastReadTime = 0;
-    static const unsigned long readInterval = 1000;
+  static unsigned long lastReadTime = 0;
+  static const unsigned long readInterval = 1000;
+  static const float scaleFactor = 2.0f;
 
-    static const float scaleFactor = 2.0f;
+  void begin()
+  {
+    pinMode(Pins::SOLAR_SENSE, INPUT);
+    analogReadResolution(12);
+    analogSetPinAttenuation(Pins::SOLAR_SENSE, ADC_11db);
+  }
 
-    void begin()
+  void update()
+  {
+    if (millis() - lastReadTime < readInterval)
     {
-        pinMode(Pins::SOLAR_SENSE, INPUT);
-        analogReadResolution(12);
-        analogSetPinAttenuation(Pins::SOLAR_SENSE, ADC_11db);
+      return;
     }
 
-    void update()
+    lastReadTime = millis();
+
+    uint32_t sum = 0;
+
+    for (uint8_t i = 0; i < 16; i++)
     {
-        if (millis() - lastReadTime < readInterval) return;
-
-        lastReadTime = millis();
-
-        uint32_t sum = 0;
-
-        for (uint8_t i = 0; i < 16; i++)
-        {
-            sum += analogRead(Pins::SOLAR_SENSE);
-        }
-
-        float raw = sum / 16.0f;
-        float adcVoltage = (raw / 4095.0f) * 3.3f;
-
-        voltage = adcVoltage * scaleFactor;
+      sum += analogRead(Pins::SOLAR_SENSE);
     }
 
-    float getVoltage()
-    {
-        return voltage;
-    }
+    float raw = sum / 16.0f;
+    float adcVoltage = (raw / 4095.0f) * 3.3f;
 
-    bool isPresent()
-    {
-        return voltage > 1.0f;
-    }
+    voltage = adcVoltage * scaleFactor;
+    ready = true;
+  }
+
+  float getVoltage()
+  {
+    return voltage;
+  }
+
+  bool isReady()
+  {
+    return ready;
+  }
+
+  bool isPresent()
+  {
+    return ready && voltage > 1.0f;
+  }
 }

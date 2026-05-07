@@ -3,9 +3,10 @@
 
 namespace solar_level
 {
-    void begin();
-    void update();
+  void begin();
+  void update();
 
-    float getVoltage();
-    bool isPresent();
+  float getVoltage();
+  bool isReady();
+  bool isPresent();
 }

@@ -1,6 +1,9 @@
 #include <Arduino.h>
+
 #include "Pins.h"
+
 #include "rotary_encoder/rotary_encoder.h"
+#include "gpio_expander/gpio_expander.h"
 #include "load_relay/load_relay.h"
 #include "source_relay/source_relay.h"
 #include "led_indicator/led_indicator.h"
@@ -10,9 +13,12 @@
 #include "pzem_sensor/pzem_sensor.h"
 #include "nepa_sense/nepa_sense.h"
 #include "inverter_sense/inverter_sense.h"
+#include "regulator/regulator.h"
 #include "load_manager/load_manager.h"
 #include "local_server/local_server.h"
 #include "ndelay/ndelay.h"
+#include "error_handling/error_handling.h"
+#include "sleep_wake/sleep_wake.h"
 
 unsigned long lastLoadUpdate = 0;
 const unsigned long loadInterval = 3000;
@@ -21,12 +27,15 @@ bool showConsumption = false;
 bool bootCheckActive = true;
 unsigned long bootCheckStart = 0;
 unsigned long bootButtonStart = 0;
+
 const unsigned long bootWindow = 5000;
 const unsigned long bootHoldTime = 3000;
+const unsigned long runtimeHoldTime = 5000;
 
 void handleBootSetupWindow()
 {
-  if (!bootCheckActive) return;
+  if (!bootCheckActive)
+    return;
 
   unsigned long now = millis();
 
@@ -42,6 +51,7 @@ void handleBootSetupWindow()
     {
       shared_var::settingsMode = true;
       shared_var::waitRelease = true;
+      shared_var::bootSetupRequest = true;
       bootCheckActive = false;
       rotary_encoder::lockUntilRelease();
     }
@@ -57,7 +67,10 @@ void handleBootSetupWindow()
 
 void handleRuntimeSettingsEntry()
 {
-  if (!shared_var::settingsMode && rotary_encoder::isHeld(5000))
+  if (bootCheckActive)
+    return;
+
+  if (!shared_var::settingsMode && rotary_encoder::isHeld(runtimeHoldTime))
   {
     shared_var::settingsMode = true;
     shared_var::waitRelease = true;
@@ -79,6 +92,7 @@ void updateLcd()
   {
     if (!shared_var::waitRelease)
       lcd_screen::update("settings");
+
     return;
   }
 
@@ -98,19 +112,40 @@ void updateLcd()
 void setup()
 {
   Serial.begin(115200);
+
   Pins::begin();
   config_manager::begin();
+
   rotary_encoder::begin();
+
+  gpio_expander::begin();
+  regulator::begin();
   load_relay::begin();
-  source_relay::begin();
+
   pzem_sensor::begin();
   nepa_sense::begin();
   inverter_sense::begin();
+  source_relay::begin();
+
   load_manager::begin();
+
   lcd_screen::begin();
   led_indicator::begin(Pins::HEARTBEAT_LED);
+
   ndelay::begin();
+  error_handling::begin();
+  sleep_wake::begin();
+
   local_server::begin();
+
+  if (!config_manager::isConfigured())
+  {
+    shared_var::settingsMode = true;
+    shared_var::waitRelease = false;
+    bootCheckActive = false;
+  }
+
+  lastLoadUpdate = millis() - loadInterval;
 }
 
 void loop()
@@ -118,11 +153,18 @@ void loop()
   rotary_encoder::update();
   led_indicator::update();
   ndelay::update();
+
+  gpio_expander::update();
+  regulator::update();
+
   pzem_sensor::update();
   nepa_sense::update();
   inverter_sense::update();
   source_relay::update();
+
   local_server::update();
+  error_handling::update();
+  sleep_wake::update();
 
   handleBootSetupWindow();
   handleRuntimeSettingsEntry();

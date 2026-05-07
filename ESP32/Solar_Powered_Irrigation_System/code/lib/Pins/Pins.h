@@ -22,5 +22,6 @@ namespace Pins
   void begin();
   void update();
   int readPin(uint8_t gpio);
+  int readAnalog(uint8_t gpio);
   void writePin(uint8_t gpio, bool value);
 }

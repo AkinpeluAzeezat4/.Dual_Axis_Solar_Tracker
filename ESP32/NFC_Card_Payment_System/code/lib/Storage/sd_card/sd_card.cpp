@@ -46,7 +46,9 @@ namespace sd_card
   bool exists(const char *path)
   {
     if (!ready)
+    {
       return false;
+    }
 
     return SD.exists(path);
   }
@@ -54,15 +56,22 @@ namespace sd_card
   bool writeText(const char *path, const String &text)
   {
     if (!ready)
+    {
       return false;
+    }
+
+    if (SD.exists(path))
+    {
+      SD.remove(path);
+    }
 
     File file = SD.open(path, FILE_WRITE);
     if (!file)
+    {
       return false;
+    }
 
-    file.seek(0);
     file.print(text);
-    file.truncate(file.position());
     file.close();
     return true;
   }
@@ -70,14 +79,18 @@ namespace sd_card
   bool appendLine(const char *path, const String &line)
   {
     if (!ready)
+    {
       return false;
+    }
 
     File file = SD.open(path, FILE_APPEND);
     if (!file)
     {
       file = SD.open(path, FILE_WRITE);
       if (!file)
+      {
         return false;
+      }
     }
 
     file.println(line);
@@ -90,11 +103,15 @@ namespace sd_card
     String content;
 
     if (!ready)
+    {
       return content;
+    }
 
     File file = SD.open(path, FILE_READ);
     if (!file)
+    {
       return content;
+    }
 
     while (file.available())
     {
@@ -108,10 +125,14 @@ namespace sd_card
   bool removeFile(const char *path)
   {
     if (!ready)
+    {
       return false;
+    }
 
     if (!SD.exists(path))
+    {
       return true;
+    }
 
     return SD.remove(path);
   }

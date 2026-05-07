@@ -1,11 +1,10 @@
 #include <Arduino.h>
+#include "nepa_sense/nepa_sense.h"
+#include "inverter_sense/inverter_sense.h"
 #include "source_relay.h"
 
 namespace source_relay
 {
-  bool phcnAvailable = true;
-  bool inverterAvailable = true;
-
   void begin()
   {
   }
@@ -14,23 +13,13 @@ namespace source_relay
   {
   }
 
-  bool isPHCNAvailable()
+  bool isNEPAAvailable()
   {
-    return phcnAvailable;
+    return nepa_sense::isAvailable();
   }
 
   bool isInverterAvailable()
   {
-    return inverterAvailable;
-  }
-
-  void setPHCNAvailable(bool available)
-  {
-    phcnAvailable = available;
-  }
-
-  void setInverterAvailable(bool available)
-  {
-    inverterAvailable = available;
+    return inverter_sense::isAvailable();
   }
 }
