@@ -1,8 +1,8 @@
-# Smart Home Energy Management System
+# Smart Hybrid IOT Energy Management System
 
 ## Overview
 
-This project is a modular Smart Home Energy Management System built around the ESP32-WROOM-32 using a structured PlatformIO architecture.
+This project is a modular Smart Hybrid IOT Energy Management System built around the ESP32-WROOM-32 using a structured PlatformIO architecture.
 
 The system monitors the real electrical load using a PZEM-004T v3.0 energy meter and automatically manages household loads between the inverter supply and PHCN/Grid supply based on:
 
