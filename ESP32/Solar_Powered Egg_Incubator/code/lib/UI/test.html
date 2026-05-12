@@ -1,38 +1,3 @@
-#include <Arduino.h>
-#include <WebServer.h>
-#include "web_dashboard.h"
-#include "wifi_manager.h"
-#include "battery_level.h"
-#include "solar_level.h"
-#include "temp_hum.h"
-#include "ultrasonic.h"
-#include "heater.h"
-#include "spinner.h"
-#include "humidifier.h"
-#include "buzzer.h"
-#include "lcd_screen.h"
-#include "rtc_clock.h"
-
-namespace web_dashboard
-{
-  static WebServer server(80);
-
-  static String relayState(bool state)
-  {
-    return state ? "ON" : "OFF";
-  }
-
-  static String buzzerState()
-  {
-    return buzzer::isActive() ? "ACTIVE" : "IDLE";
-  }
-
-  static String page()
-  {
-    String html;
-    html.reserve(30000);
-
-    html += R"rawliteral(
 <!DOCTYPE html>
 <html lang="en">
 
@@ -40,6 +5,9 @@ namespace web_dashboard
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Egg Incubator Dashboard</title>
+
+
+
 
   <style>
     :root {
@@ -594,6 +562,8 @@ namespace web_dashboard
 </head>
 
 <body>
+
+  
   <header>
     <div class="header-wrap">
       <div class="theme-toggle-wrap">
@@ -606,15 +576,7 @@ namespace web_dashboard
 
       <h2>Solar Powered Egg Incubator</h2>
       <div class="sub">
-        IP: <span id="ip">)rawliteral";
-
-    html += wifi_manager::getIp();
-
-    html += R"rawliteral(</span><span class="space"></span> Time: <span id="time">)rawliteral";
-
-    html += rtc_clock::getDateTime();
-
-    html += R"rawliteral(</span>
+        IP: <span id="ip">192.168.4.1</span><span class="space"></span> Time: <span id="time">2026-05-12 15:00:00</span>
       </div>
     </div>
   </header>
@@ -623,66 +585,34 @@ namespace web_dashboard
     <section class="grid sensor-grid">
       <div class="card temperature-card">
         <div class="card-title">Temperature</div>
-        <div class="v"><span id="temp">)rawliteral";
-
-    html += String(temp_hum::getTemperature(), 1);
-
-    html += R"rawliteral(</span> <span class="unit">&deg;C</span></div>
+        <div class="v"><span id="temp">37.5</span> <span class="unit">°C</span></div>
       </div>
 
       <div class="card humidity-card">
         <div class="card-title">Humidity</div>
-        <div class="v"><span id="hum">)rawliteral";
-
-    html += String(temp_hum::getHumidity(), 0);
-
-    html += R"rawliteral(</span> <span class="unit">%</span></div>
+        <div class="v"><span id="hum">56</span> <span class="unit">%</span></div>
       </div>
 
       <div class="card battery-card">
         <div class="card-title">Battery</div>
-        <div class="v"><span id="battv">)rawliteral";
-
-    html += String(battery_level::getVoltage(), 2);
-
-    html += R"rawliteral(</span> <span class="unit">V</span></div>
-        <div class="percent"><span id="battp">)rawliteral";
-
-    html += String(battery_level::getPercentage());
-
-    html += R"rawliteral(</span>% remaining</div>
+        <div class="v"><span id="battv">3.92</span> <span class="unit">V</span></div>
+        <div class="percent"><span id="battp">72</span>% remaining</div>
       </div>
 
       <div class="card solar-card">
         <div class="card-title">Solar</div>
-        <div class="v"><span id="solarv">)rawliteral";
-
-    html += String(solar_level::getVoltage(), 2);
-
-    html += R"rawliteral(</span> <span class="unit">V</span></div>
-        <div class="percent"><span id="solarp">)rawliteral";
-
-    html += String(solar_level::getPercentage());
-
-    html += R"rawliteral(</span>% input</div>
+        <div class="v"><span id="solarv">11.80</span> <span class="unit">V</span></div>
+        <div class="percent"><span id="solarp">98</span>% input</div>
       </div>
 
       <div class="card ultrasonic-card">
         <div class="card-title">Ultrasonic</div>
-        <div class="v"><span id="dist">)rawliteral";
-
-    html += String(ultrasonic::getDistanceCm(), 1);
-
-    html += R"rawliteral(</span> <span class="unit">cm</span></div>
+        <div class="v"><span id="dist">18.4</span> <span class="unit">cm</span></div>
       </div>
 
       <div class="card lcd-card">
         <div class="card-title">LCD</div>
-        <div class="v"><span id="lcd">)rawliteral";
-
-    html += String(lcd_screen::isAwake() ? "AWAKE" : "SLEEP");
-
-    html += R"rawliteral(</span></div>
+        <div class="v"><span id="lcd">AWAKE</span></div>
       </div>
     </section>
 
@@ -692,11 +622,7 @@ namespace web_dashboard
       <div class="card control-card heater-card">
         <div class="state-row">
           <span>Heater</span>
-          <b class="state" id="heater">)rawliteral";
-
-    html += relayState(heater::isOn());
-
-    html += R"rawliteral(</b>
+          <b class="state" id="heater">OFF</b>
         </div>
         <div class="btn-row">
           <button class="btn" onclick="toggleDevice('heater')">Toggle</button>
@@ -706,11 +632,7 @@ namespace web_dashboard
       <div class="card control-card spinner-card">
         <div class="state-row">
           <span>Spinner</span>
-          <b class="state" id="spinner">)rawliteral";
-
-    html += relayState(spinner::isOn());
-
-    html += R"rawliteral(</b>
+          <b class="state" id="spinner">OFF</b>
         </div>
         <div class="btn-row">
           <button class="btn" onclick="toggleDevice('spinner')">Toggle</button>
@@ -720,11 +642,7 @@ namespace web_dashboard
       <div class="card control-card humidifier-card">
         <div class="state-row">
           <span>Humidifier</span>
-          <b class="state" id="humidifier">)rawliteral";
-
-    html += relayState(humidifier::isOn());
-
-    html += R"rawliteral(</b>
+          <b class="state" id="humidifier">OFF</b>
         </div>
         <div class="btn-row">
           <button class="btn" onclick="toggleDevice('humidifier')">Toggle</button>
@@ -734,11 +652,7 @@ namespace web_dashboard
       <div class="card control-card buzzer-card">
         <div class="state-row">
           <span>Buzzer</span>
-          <b class="state" id="buzzer">)rawliteral";
-
-    html += buzzerState();
-
-    html += R"rawliteral(</b>
+          <b class="state" id="buzzer">IDLE</b>
         </div>
         <div class="btn-row">
           <button class="btn danger" onclick="beep()">Beep</button>
@@ -758,166 +672,86 @@ namespace web_dashboard
     </section>
 
     <p class="footer-note">
-      This dashboard is a prototype for the solar powered egg incubator project. Sensor values are dynamically
+      This dashboard is a prototype for the solar powered egg incubator project. Sensors values are dynamically
       updated from the actual hardware readings and controls.
+
     </p>
   </main>
 
   <script>
+    const state = {
+      heater: false,
+      spinner: false,
+      humidifier: false,
+      lcd: true,
+      beepCount: 0,
+      darkMode: false
+    };
+
+    function relayState(value) {
+      return value ? "ON" : "OFF";
+    }
+
+    function randomFloat(min, max, decimals = 1) {
+      return (Math.random() * (max - min) + min).toFixed(decimals);
+    }
+
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
     function toggleTheme() {
       const checked = document.getElementById("themeToggle").checked;
+      state.darkMode = checked;
       document.body.classList.toggle("dark-mode", checked);
       document.getElementById("themeText").innerHTML = checked ? "Dark" : "Light";
-      localStorage.setItem("eggTheme", checked ? "dark" : "light");
     }
 
-    function loadTheme() {
-      const savedTheme = localStorage.getItem("eggTheme");
-      const isDark = savedTheme === "dark";
-      document.getElementById("themeToggle").checked = isDark;
-      document.body.classList.toggle("dark-mode", isDark);
-      document.getElementById("themeText").innerHTML = isDark ? "Dark" : "Light";
+    function updateTime() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mi = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      document.getElementById("time").innerHTML = `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
     }
 
-    async function updateDashboard() {
-      try {
-        const response = await fetch("/api");
-        const data = await response.json();
-
-        for (const key in data) {
-          const element = document.getElementById(key);
-
-          if (element) {
-            element.innerHTML = data[key];
-          }
-        }
-      } catch (error) {
-        console.log("Dashboard update failed:", error);
-      }
+    function updateDashboard() {
+      updateTime();
+      document.getElementById("temp").innerHTML = randomFloat(36.8, 38.2, 1);
+      document.getElementById("hum").innerHTML = randomInt(50, 65);
+      document.getElementById("battv").innerHTML = randomFloat(3.65, 4.15, 2);
+      document.getElementById("battp").innerHTML = randomInt(45, 95);
+      document.getElementById("solarv").innerHTML = randomFloat(8.5, 12.4, 2);
+      document.getElementById("solarp").innerHTML = randomInt(55, 100);
+      document.getElementById("dist").innerHTML = randomFloat(12.0, 25.0, 1);
+      document.getElementById("lcd").innerHTML = state.lcd ? "AWAKE" : "SLEEP";
+      document.getElementById("heater").innerHTML = relayState(state.heater);
+      document.getElementById("spinner").innerHTML = relayState(state.spinner);
+      document.getElementById("humidifier").innerHTML = relayState(state.humidifier);
+      document.getElementById("buzzer").innerHTML = state.beepCount > 0 ? `BEEP ${state.beepCount}` : "IDLE";
     }
 
-    async function toggleDevice(device) {
-      await fetch(`/toggle?dev=${device}`);
+    function toggleDevice(device) {
+      state[device] = !state[device];
       updateDashboard();
     }
 
-    async function beep() {
-      await fetch("/beep");
+    function beep() {
+      state.beepCount += 1;
       updateDashboard();
     }
 
-    async function setLcd(value) {
-      await fetch(`/lcd?wake=${value ? "1" : "0"}`);
+    function setLcd(value) {
+      state.lcd = value;
       updateDashboard();
     }
 
-    loadTheme();
     setInterval(updateDashboard, 1000);
     updateDashboard();
   </script>
 </body>
 
 </html>
-)rawliteral";
-
-    return html;
-  }
-
-  static void sendApi()
-  {
-    String json = "{";
-    json += "\"ip\":\"" + wifi_manager::getIp() + "\",";
-    json += "\"time\":\"" + rtc_clock::getDateTime() + "\",";
-    json += "\"temp\":\"" + String(temp_hum::getTemperature(), 1) + "\",";
-    json += "\"hum\":\"" + String(temp_hum::getHumidity(), 0) + "\",";
-    json += "\"battv\":\"" + String(battery_level::getVoltage(), 2) + "\",";
-    json += "\"battp\":\"" + String(battery_level::getPercentage()) + "\",";
-    json += "\"solarv\":\"" + String(solar_level::getVoltage(), 2) + "\",";
-    json += "\"solarp\":\"" + String(solar_level::getPercentage()) + "\",";
-    json += "\"dist\":\"" + String(ultrasonic::getDistanceCm(), 1) + "\",";
-    json += "\"lcd\":\"" + String(lcd_screen::isAwake() ? "AWAKE" : "SLEEP") + "\",";
-    json += "\"heater\":\"" + relayState(heater::isOn()) + "\",";
-    json += "\"spinner\":\"" + relayState(spinner::isOn()) + "\",";
-    json += "\"humidifier\":\"" + relayState(humidifier::isOn()) + "\",";
-    json += "\"buzzer\":\"" + buzzerState() + "\"";
-    json += "}";
-
-    server.send(200, "application/json", json);
-  }
-
-  static void sendStateJson()
-  {
-    String json = "{";
-    json += "\"ok\":true,";
-    json += "\"ip\":\"" + wifi_manager::getIp() + "\",";
-    json += "\"time\":\"" + rtc_clock::getDateTime() + "\",";
-    json += "\"temp\":\"" + String(temp_hum::getTemperature(), 1) + "\",";
-    json += "\"hum\":\"" + String(temp_hum::getHumidity(), 0) + "\",";
-    json += "\"battv\":\"" + String(battery_level::getVoltage(), 2) + "\",";
-    json += "\"battp\":\"" + String(battery_level::getPercentage()) + "\",";
-    json += "\"solarv\":\"" + String(solar_level::getVoltage(), 2) + "\",";
-    json += "\"solarp\":\"" + String(solar_level::getPercentage()) + "\",";
-    json += "\"dist\":\"" + String(ultrasonic::getDistanceCm(), 1) + "\",";
-    json += "\"lcd\":\"" + String(lcd_screen::isAwake() ? "AWAKE" : "SLEEP") + "\",";
-    json += "\"heater\":\"" + relayState(heater::isOn()) + "\",";
-    json += "\"spinner\":\"" + relayState(spinner::isOn()) + "\",";
-    json += "\"humidifier\":\"" + relayState(humidifier::isOn()) + "\",";
-    json += "\"buzzer\":\"" + buzzerState() + "\"";
-    json += "}";
-
-    server.send(200, "application/json", json);
-  }
-
-  void begin()
-  {
-    server.on("/", []()
-              { server.send(200, "text/html", page()); });
-
-    server.on("/api", []()
-              { sendApi(); });
-
-    server.on("/toggle", []()
-              {
-                String dev = server.arg("dev");
-
-                if (dev == "heater")
-                {
-                  heater::toggle();
-                }
-                else if (dev == "spinner")
-                {
-                  spinner::toggle();
-                }
-                else if (dev == "humidifier")
-                {
-                  humidifier::toggle();
-                }
-
-                sendStateJson(); });
-
-    server.on("/beep", []()
-              {
-                buzzer::beep(100, 100, 2);
-                sendStateJson(); });
-
-    server.on("/lcd", []()
-              {
-                if (server.arg("wake") == "1")
-                {
-                  lcd_screen::wake();
-                }
-                else
-                {
-                  lcd_screen::sleep();
-                }
-
-                sendStateJson(); });
-
-    server.begin();
-  }
-
-  void update()
-  {
-    server.handleClient();
-  }
-}

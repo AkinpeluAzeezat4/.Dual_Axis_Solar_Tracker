@@ -5,7 +5,6 @@
 This project is a Dual Axis Solar Tracking System built using the ESP32-WROOM-32UE microcontroller and an L298D motor driver module. The system automatically tracks the direction of sunlight using four LDR sensors and positions the solar panel for maximum light exposure using two DC motors.
 
 The tracker also includes:
-
 - Automatic night detection and sleep mode
 - Rotary encoder based calibration and control
 - Direction indication LEDs
@@ -34,28 +33,22 @@ The project is designed using a modular architecture for easier maintenance, deb
 # Hardware Used
 
 ## Main Controller
-
 - ESP32-WROOM-32UE
 
 ## Motor Driver
-
 - L298D Dual H-Bridge Motor Driver
 
 ## Sensors
-
 - 4 × LDRs for sun tracking
 - 1 × LDR for night detection
 
 ## Inputs
-
 - Rotary Encoder with push button
 
 ## Indicators
-
 - 5 mm LEDs for direction indication
 
 ## Motors
-
 - 2 × DC Gear Motors
   - Azimuth movement
   - Elevation movement
@@ -66,42 +59,42 @@ The project is designed using a modular architecture for easier maintenance, deb
 
 ## Motor Driver
 
-| Signal | GPIO   |
-| ------ | ------ |
-| AZ_EN  | GPIO25 |
+| Signal | GPIO |
+|---|---|
+| AZ_EN | GPIO25 |
 | AZ_IN1 | GPIO32 |
 | AZ_IN2 | GPIO33 |
-| EL_EN  | GPIO14 |
+| EL_EN | GPIO14 |
 | EL_IN1 | GPIO26 |
 | EL_IN2 | GPIO27 |
 
 ## LDR Sensors
 
-| Sensor       | GPIO   |
-| ------------ | ------ |
-| Top Left     | GPIO4  |
-| Top Right    | GPIO35 |
-| Bottom Left  | GPIO39 |
+| Sensor | GPIO |
+|---|---|
+| Top Left | GPIO4 |
+| Top Right | GPIO35 |
+| Bottom Left | GPIO39 |
 | Bottom Right | GPIO34 |
-| Night LDR    | GPIO36 |
+| Night LDR | GPIO36 |
 
 ## Rotary Encoder
 
-| Signal | GPIO   |
-| ------ | ------ |
-| CLK    | GPIO18 |
-| DT     | GPIO19 |
-| SW     | GPIO23 |
+| Signal | GPIO |
+|---|---|
+| CLK | GPIO18 |
+| DT | GPIO19 |
+| SW | GPIO23 |
 
 ## LEDs
 
-| LED    | GPIO   |
-| ------ | ------ |
-| LEFT   | GPIO5  |
-| RIGHT  | GPIO17 |
-| UP     | GPIO16 |
-| DOWN   | GPIO15 |
-| STATUS | GPIO2  |
+| LED | GPIO |
+|---|---|
+| LEFT | GPIO5 |
+| RIGHT | GPIO17 |
+| UP | GPIO16 |
+| DOWN | GPIO15 |
+| STATUS | GPIO2 |
 
 ---
 
@@ -134,9 +127,7 @@ src/
 # Rotary Encoder Operation
 
 ## Short Press
-
 Cycles through:
-
 - AUTO_TRACK
 - MANUAL_AZIMUTH
 - MANUAL_ELEVATION
@@ -144,25 +135,20 @@ Cycles through:
 - CALIBRATE_NIGHT
 
 ## Long Press
-
 Returns system to AUTO_TRACK mode.
 
 ## Rotation Functions
 
 ### MANUAL_AZIMUTH
-
 Moves panel left and right.
 
 ### MANUAL_ELEVATION
-
 Moves panel up and down.
 
 ### CALIBRATE_DEADBAND
-
 Adjusts tracking sensitivity.
 
 ### CALIBRATE_NIGHT
-
 Adjusts night detection threshold.
 
 ---
@@ -181,7 +167,6 @@ Adjusts night detection threshold.
 ## Automatic Tracking
 
 The system compares:
-
 - Left vs Right light intensity
 - Top vs Bottom light intensity
 
@@ -192,7 +177,6 @@ The motors automatically reposition the solar panel toward the strongest light s
 ## Manual Control
 
 Use short press to enter:
-
 - MANUAL_AZIMUTH
 - MANUAL_ELEVATION
 
@@ -205,12 +189,10 @@ Rotate the encoder to move the panel manually.
 ### Deadband Calibration
 
 Higher deadband:
-
 - Less motor movement
 - Less jitter
 
 Lower deadband:
-
 - Faster response
 - Higher sensitivity
 
@@ -223,13 +205,11 @@ Adjusts the darkness level required before entering sleep mode.
 # Sleep Mode
 
 When darkness is detected:
-
 - Motors stop
 - LEDs turn off
 - ESP32 enters deep sleep
 
 Wake sources:
-
 - Rotary encoder button
 - Timer wakeup
 
@@ -238,12 +218,10 @@ Wake sources:
 # PWM Motor Control
 
 PWM is used on:
-
 - GPIO25
 - GPIO14
 
 This provides:
-
 - Smooth movement
 - Adjustable speed
 - Reduced motor stress
@@ -298,15 +276,13 @@ pio device monitor
 # Security Note
 
 Sensitive information such as:
-
 - WiFi password
 - Access point password
 - API keys
 
 have intentionally been hidden using:
 
----
-
+*****
 before publishing to GitHub.
 
 ---
@@ -327,8 +303,8 @@ before publishing to GitHub.
 
 Egbe Raymond
 
-Electrical / Electronic Engineer
-Embedded Systems Developer
+Electrical / Electronic Engineer  
+Embedded Systems Developer  
 Full Stack Developer
 
 ---
