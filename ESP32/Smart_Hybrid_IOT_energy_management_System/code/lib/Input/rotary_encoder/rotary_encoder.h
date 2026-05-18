@@ -1,17 +1,17 @@
-#ifndef ROTARY_ENCODER_H
-#define ROTARY_ENCODER_H
+#pragma once
 
 #include <Arduino.h>
-#include "Pins.h"
 
 namespace rotary_encoder
 {
-
   void begin();
   void update();
-  int getPosition();
+
+  int getDirection();
+
+  bool wasPressed();
   bool isPressed();
+  bool isHeld(unsigned long holdTime);
 
+  void lockUntilRelease();
 }
-
-#endif

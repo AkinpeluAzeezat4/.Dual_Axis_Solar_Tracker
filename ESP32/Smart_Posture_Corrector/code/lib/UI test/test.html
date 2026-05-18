@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Posture Corrector</title>
+  <style>
+    :root {
+      --bg: #eef2f7;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #667085;
+      --box: #f4f7fb;
+      --border: #d9e2ef;
+      --primary: #0b5fff;
+      --primary-dark: #0845b8;
+      --danger: #d92d20;
+      --warning: #f79009;
+      --success: #039855;
+      --shadow: 0 12px 35px rgba(20, 35, 65, 0.12);
+    }
+
+    body.dark {
+      --bg: #0b1220;
+      --card: #111827;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --box: #1f2937;
+      --border: #334155;
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #22c55e;
+      --shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      transition: background 0.25s ease, color 0.25s ease;
+    }
+
+    .page {
+      width: 100%;
+      max-width: 1050px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .title h1 {
+      font-size: clamp(24px, 5vw, 38px);
+      margin: 0 0 6px;
+      line-height: 1.1;
+    }
+
+    .title p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .theme-btn {
+      border: 0;
+      background: var(--box);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+    }
+
+    .state-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 230px;
+    }
+
+    .state-circle {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(3, 152, 85, 0.13);
+      border: 8px solid var(--success);
+      margin-bottom: 16px;
+    }
+
+    .state-text {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--success);
+    }
+
+    .state-help {
+      color: var(--muted);
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      background: var(--box);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 92px;
+    }
+
+    .metric label {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .metric span {
+      display: block;
+      font-size: clamp(20px, 4vw, 28px);
+      font-weight: 800;
+    }
+
+    .metric small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .battery-bar {
+      width: 100%;
+      height: 10px;
+      background: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .battery-fill {
+      width: 71%;
+      height: 100%;
+      background: var(--success);
+      border-radius: 20px;
+      transition: width 0.25s ease;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .status-pill {
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(3, 152, 85, 0.14);
+      color: var(--success);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      border: 0;
+      border-radius: 12px;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 800;
+      font-size: 14px;
+      padding: 10px;
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn.dark-btn {
+      background: #344054;
+    }
+
+    .btn.danger {
+      background: var(--danger);
+    }
+
+    .log-box {
+      background: #06111f;
+      color: #38ff88;
+      padding: 14px;
+      border-radius: 14px;
+      overflow: auto;
+      max-height: 420px;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre;
+    }
+
+    .footer-info {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .info-item {
+      background: var(--box);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    @media (max-width: 850px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .footer-info {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      body {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 14px;
+        border-radius: 15px;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .theme-btn {
+        width: 100%;
+      }
+
+      .state-circle {
+        width: 125px;
+        height: 125px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <section class="card topbar">
+      <div class="title">
+        <h1>Smart Posture Corrector</h1>
+        <p>ESP32 local dashboard for live posture monitoring and SD card log access.</p>
+      </div>
+      <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">Dark Theme</button>
+    </section>
+
+    <section class="hero-grid">
+      <div class="card state-panel">
+        <div class="state-circle" id="stateCircle">
+          <div class="state-text" id="state">GOOD</div>
+        </div>
+        <p class="state-help" id="stateHelp">Your posture is currently within the calibrated safe range.</p>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          <h2>System Summary</h2>
+          <span class="status-pill" id="sdPill">SD CARD OK</span>
+        </div>
+        <div class="summary-grid">
+          <div class="metric">
+            <label>Battery</label>
+            <span id="battery">3.91V / 71%</span>
+            <div class="battery-bar">
+              <div class="battery-fill" id="batteryFill"></div>
+            </div>
+          </div>
+          <div class="metric">
+            <label>Mute Status</label>
+            <span id="mute">NO</span>
+            <small>Short press button to toggle</small>
+          </div>
+          <div class="metric">
+            <label>Baseline</label>
+            <span id="baseline">10.28°</span>
+            <small>Saved calibration angle</small>
+          </div>
+          <div class="metric">
+            <label>Pitch Error</label>
+            <span id="error">2.14°</span>
+            <small>Current pitch minus baseline</small>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Live Sensor Values</h2>
+        <span class="status-pill">AUTO REFRESH</span>
+      </div>
+      <div class="summary-grid">
+        <div class="metric"><label>Pitch</label><span id="pitch">12.42°</span></div>
+        <div class="metric"><label>Roll</label><span id="roll">-1.36°</span></div>
+        <div class="metric"><label>Vibration Motor</label><span id="motor">OFF</span></div>
+        <div class="metric"><label>Buzzer</label><span id="buzzer">OFF</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Controls</h2>
+        <span class="status-pill">LOCAL CONTROL</span>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="demoCalibrate()">Recalibrate</button>
+        <button class="btn dark-btn" onclick="toggleMute()">Mute / Unmute</button>
+        <button class="btn" onclick="showLogs()">View Logs</button>
+        <button class="btn" onclick="downloadDemo()">Download CSV</button>
+        <button class="btn danger" onclick="clearLogs()">Clear Logs</button>
+      </div>
+    </section>
+
+    <section class="card" id="logCard">
+      <div class="section-title">
+        <h2>SD Card Logs Preview</h2>
+        <span class="status-pill">/posture_log.csv</span>
+      </div>
+      <div class="log-box" id="logs">time_ms,state,pitch,roll,pitch_error,baseline,battery_voltage,battery_percent,muted
+        1000,GOOD,12.42,-1.36,2.14,10.28,3.91,71,0
+        2000,GOOD,12.60,-1.20,2.32,10.28,3.90,70,0
+        3000,BAD,27.80,-2.11,17.52,10.28,3.90,70,0
+        4000,ALERT,28.10,-2.18,17.82,10.28,3.89,69,0</div>
+    </section>
+
+    <section class="footer-info">
+      <div class="info-item"><b>Wi-Fi SSID:</b><br>Posture-Corrector</div>
+      <div class="info-item"><b>Password:</b><br>*****</div>
+      <div class="info-item"><b>Dashboard IP:</b><br>192.168.4.1</div>
+    </section>
+  </main>
+
+  <script>
+    let dark = false;
+    let muted = false;
+    let currentState = 'GOOD';
+    let logVisible = true;
+
+    function toggleTheme() {
+      dark = !dark;
+      document.body.classList.toggle('dark', dark);
+      document.getElementById('themeBtn').innerText = dark ? 'Light Theme' : 'Dark Theme';
+    }
+
+    function setState(state) {
+      currentState = state;
+      const stateEl = document.getElementById('state');
+      const circle = document.getElementById('stateCircle');
+      const help = document.getElementById('stateHelp');
+
+      stateEl.innerText = state;
+
+      if (state === 'GOOD') {
+        stateEl.style.color = 'var(--success)';
+        circle.style.borderColor = 'var(--success)';
+        circle.style.background = 'rgba(3, 152, 85, 0.13)';
+        help.innerText = 'Your posture is currently within the calibrated safe range.';
+        document.getElementById('motor').innerText = 'OFF';
+        document.getElementById('buzzer').innerText = 'OFF';
+      } else if (state === 'BAD') {
+        stateEl.style.color = 'var(--warning)';
+        circle.style.borderColor = 'var(--warning)';
+        circle.style.background = 'rgba(247, 144, 9, 0.15)';
+        help.innerText = 'Bad posture detected. Alert will trigger if it continues.';
+        document.getElementById('motor').innerText = 'OFF';
+        document.getElementById('buzzer').innerText = 'OFF';
+      } else {
+        stateEl.style.color = 'var(--danger)';
+        circle.style.borderColor = 'var(--danger)';
+        circle.style.background = 'rgba(217, 45, 32, 0.15)';
+        help.innerText = 'Posture alert is active. Please correct your posture.';
+        document.getElementById('motor').innerText = muted ? 'OFF' : 'ON';
+        document.getElementById('buzzer').innerText = muted ? 'OFF' : 'ON';
+      }
+    }
+
+    function toggleMute() {
+      muted = !muted;
+      document.getElementById('mute').innerText = muted ? 'YES' : 'NO';
+      setState(currentState);
+    }
+
+    function demoCalibrate() {
+      document.getElementById('baseline').innerText = '12.42°';
+      document.getElementById('error').innerText = '0.00°';
+      setState('GOOD');
+    }
+
+    function showLogs() {
+      logVisible = !logVisible;
+      document.getElementById('logCard').style.display = logVisible ? 'block' : 'none';
+    }
+
+    function clearLogs() {
+      document.getElementById('logs').innerText = 'time_ms,state,pitch,roll,pitch_error,baseline,battery_voltage,battery_percent,muted';
+    }
+
+    function downloadDemo() {
+      alert('On the ESP32, this button downloads /posture_log.csv from the SD card.');
+    }
+
+    function simulateLiveData() {
+      const pitch = 12 + Math.sin(Date.now() / 1500) * 18;
+      const roll = -1.5 + Math.cos(Date.now() / 1800) * 2;
+      const baseline = 10.28;
+      const error = pitch - baseline;
+      const battery = 71 + Math.round(Math.sin(Date.now() / 6000) * 2);
+
+      document.getElementById('pitch').innerText = pitch.toFixed(2) + '°';
+      document.getElementById('roll').innerText = roll.toFixed(2) + '°';
+      document.getElementById('error').innerText = error.toFixed(2) + '°';
+      document.getElementById('battery').innerText = '3.91V / ' + battery + '%';
+      document.getElementById('batteryFill').style.width = battery + '%';
+
+      if (Math.abs(error) >= 15) setState('ALERT');
+      else if (Math.abs(error) >= 8) setState('BAD');
+      else setState('GOOD');
+    }
+
+    setState('GOOD');
+    simulateLiveData();
+    setInterval(simulateLiveData, 1000);
+  </script>
+</body>
+
+</html>

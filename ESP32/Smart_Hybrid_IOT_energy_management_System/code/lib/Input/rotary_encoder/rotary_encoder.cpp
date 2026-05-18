@@ -1,45 +1,133 @@
+#include <Arduino.h>
+#include "Pins.h"
 #include "rotary_encoder.h"
-
-const int ENCODER_A = Pins::GPIO15;
-const int ENCODER_B = Pins::GPIO15;
-const int ENCODER_SW = Pins::GPIO15;
 
 namespace rotary_encoder
 {
+  const int encoderA = Pins::ENCODER_A;
+  const int encoderB = Pins::ENCODER_B;
+  const int encoderSw = Pins::ENCODER_SW;
 
-    // Encoder state
-    volatile int position = 0;
-    volatile bool lastA = 0;
-    volatile bool lastB = 0;
-    bool buttonState = false;
+  int lastEncoded = 0;
+  int rawPosition = 0;
+  int stepPosition = 0;
+  int direction = 0;
 
-    void begin()
+  bool lastReading = HIGH;
+  bool stableButtonState = HIGH;
+  bool lastStableButtonState = HIGH;
+  bool pressEvent = false;
+  bool inputLocked = false;
+
+  unsigned long lastDebounceTime = 0;
+  const unsigned long debounceDelay = 50;
+
+  unsigned long holdStart = 0;
+  bool holdTriggered = false;
+
+  void begin()
+  {
+    pinMode(encoderA, INPUT_PULLUP);
+    pinMode(encoderB, INPUT_PULLUP);
+    pinMode(encoderSw, INPUT_PULLUP);
+
+    lastEncoded = (digitalRead(encoderA) << 1) | digitalRead(encoderB);
+  }
+
+  void update()
+  {
+    int encoded = (digitalRead(encoderA) << 1) | digitalRead(encoderB);
+    int sum = (lastEncoded << 2) | encoded;
+
+    if (sum == 0b0001 || sum == 0b0111 || sum == 0b1110 || sum == 0b1000)
+      rawPosition++;
+    else if (sum == 0b0010 || sum == 0b0100 || sum == 0b1101 || sum == 0b1011)
+      rawPosition--;
+
+    lastEncoded = encoded;
+
+    int newStep = rawPosition / 4;
+
+    if (newStep != stepPosition)
     {
-        lastA = Pins::readPin(ENCODER_A); // encoder A
-        lastB = Pins::readPin(ENCODER_B); // encoder B
+      direction = newStep > stepPosition ? 1 : -1;
+      stepPosition = newStep;
     }
 
-    void update()
+    bool reading = digitalRead(encoderSw);
+    unsigned long now = millis();
+
+    if (reading != lastReading)
+      lastDebounceTime = now;
+
+    if (now - lastDebounceTime > debounceDelay)
     {
-        bool A = Pins::readPin(ENCODER_A); // encoder A
-        bool B = Pins::readPin(ENCODER_B); // encoder B
+      if (reading != stableButtonState)
+      {
+        stableButtonState = reading;
 
-        // Detect rotation
-        if (A != lastA)
-        {
-            if (A == B)
-                position++;
-            else
-                position--;
-        }
-        lastA = A;
-        lastB = B;
+        if (stableButtonState == LOW && lastStableButtonState == HIGH && !inputLocked)
+          pressEvent = true;
 
-        // Button state
-        buttonState = (Pins::readPin(ENCODER_SW) == LOW); // encoder button
+        lastStableButtonState = stableButtonState;
+      }
     }
 
-    int getPosition() { return position; }
-    bool isPressed() { return buttonState; }
+    lastReading = reading;
 
+    if (stableButtonState == HIGH)
+    {
+      inputLocked = false;
+      holdStart = 0;
+      holdTriggered = false;
+    }
+  }
+
+  int getDirection()
+  {
+    int temp = direction;
+    direction = 0;
+    return temp;
+  }
+
+  bool wasPressed()
+  {
+    if (inputLocked)
+      return false;
+
+    bool temp = pressEvent;
+    pressEvent = false;
+
+    return temp;
+  }
+
+  bool isPressed()
+  {
+    return stableButtonState == LOW;
+  }
+
+  bool isHeld(unsigned long holdTime)
+  {
+    if (!isPressed())
+      return false;
+
+    if (holdStart == 0)
+      holdStart = millis();
+
+    if (!holdTriggered && millis() - holdStart >= holdTime)
+    {
+      holdTriggered = true;
+      inputLocked = true;
+      pressEvent = false;
+      return true;
+    }
+
+    return false;
+  }
+
+  void lockUntilRelease()
+  {
+    inputLocked = true;
+    pressEvent = false;
+  }
 }

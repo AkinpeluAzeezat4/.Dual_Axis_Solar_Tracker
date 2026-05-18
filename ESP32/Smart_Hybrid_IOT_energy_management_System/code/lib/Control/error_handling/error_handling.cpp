@@ -1,32 +1,59 @@
-#include "error_handling/error_handling.h"
-#include "esp_system.h"
+#include <Arduino.h>
+#include "error_handling.h"
+#include "gpio_expander/gpio_expander.h"
+#include "pzem_sensor/pzem_sensor.h"
+#include "nepa_sense/nepa_sense.h"
+#include "inverter_sense/inverter_sense.h"
 
 namespace error_handling
 {
+  ErrorCode currentError = NO_ERROR;
 
-    bool watchdogError = false;
-    bool codeError = false;
+  void begin()
+  {
+    currentError = NO_ERROR;
+  }
 
-    void begin()
+  void update()
+  {
+    if (!gpio_expander::isReady())
     {
-        esp_reset_reason_t reason = esp_reset_reason();
-        watchdogError = (reason == ESP_RST_WDT || reason == ESP_RST_TASK_WDT);
-        codeError = false;
+      currentError = PCA9555_ERROR;
+      return;
     }
 
-    void update()
+    if (!nepa_sense::isAvailable() && !inverter_sense::isAvailable())
     {
-        // nothing active here
+      currentError = NO_SOURCE_ERROR;
+      return;
     }
 
-    void setCodeError(bool state)
+    if (!pzem_sensor::hasValidData())
     {
-        codeError = state;
+      currentError = PZEM_ERROR;
+      return;
     }
 
-    bool hasError()
-    {
-        return watchdogError || codeError;
-    }
+    currentError = NO_ERROR;
+  }
 
+  void setError(ErrorCode error)
+  {
+    currentError = error;
+  }
+
+  void clearError()
+  {
+    currentError = NO_ERROR;
+  }
+
+  bool hasError()
+  {
+    return currentError != NO_ERROR;
+  }
+
+  ErrorCode getError()
+  {
+    return currentError;
+  }
 }

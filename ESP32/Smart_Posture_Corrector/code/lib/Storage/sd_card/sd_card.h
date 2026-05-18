@@ -8,4 +8,8 @@ namespace sd_card
 
   bool isReady();
   void logNow();
+
+  String readLogFile();
+  bool clearLogFile();
+  const char *getLogFileName();
 }

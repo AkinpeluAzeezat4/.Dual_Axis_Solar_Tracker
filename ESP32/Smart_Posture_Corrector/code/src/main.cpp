@@ -10,6 +10,7 @@
 #include "posture_logic/posture_logic.h"
 #include "error_handling/error_handling.h"
 #include "sleep_wake/sleep_wake.h"
+#include "local_server/local_server.h"
 #include "reset/reset.h"
 
 static unsigned long lastPrint = 0;
@@ -30,7 +31,12 @@ void setup()
   sd_card::begin();
   error_handling::begin();
   sleep_wake::begin();
+  local_server::begin();
   reset::begin();
+
+  Serial.println("Smart Posture Corrector Ready");
+  Serial.print("Web Dashboard IP: ");
+  Serial.println(local_server::getIP());
 }
 
 void loop()
@@ -41,15 +47,13 @@ void loop()
   posture_logic::update();
   error_handling::update();
   vibration_motor::update();
-
-
-
   buzzer::update();
 
   led_indicator::setBatteryLevel(battery_level::getPercentage());
   led_indicator::update();
 
   sd_card::update();
+  local_server::update();
   sleep_wake::update();
   reset::update();
 
@@ -73,22 +77,22 @@ void loop()
     mpu6050_sensor::SensorData data = mpu6050_sensor::getData();
 
     Serial.print("STATE:");
-    Serial.println(posture_logic::getStateText());
+    Serial.print(posture_logic::getStateText());
     Serial.print(" | PITCH:");
-    Serial.println(data.pitch, 2);
+    Serial.print(data.pitch, 2);
     Serial.print(" | ROLL:");
-    Serial.println(data.roll, 2);
+    Serial.print(data.roll, 2);
     Serial.print(" | ERROR:");
-    Serial.println(posture_logic::getPitchError(), 2);
-    // Serial.print(" | BAT:");
-    // Serial.println(battery_level::getVoltage(), 2);
-    // Serial.print("V ");
-    // Serial.println(battery_level::getPercentage());
-    // Serial.print("% | SD:");
-    // Serial.println(sd_card::isReady() ? "OK" : "NO");
+    Serial.print(posture_logic::getPitchError(), 2);
+    Serial.print(" | BAT:");
+    Serial.print(battery_level::getVoltage(), 2);
+    Serial.print("V ");
+    Serial.print(battery_level::getPercentage());
+    Serial.print("% | SD:");
+    Serial.print(sd_card::isReady() ? "OK" : "NO");
     Serial.print(" | MUTE:");
-    Serial.println(posture_logic::isMuted() ? "YES" : "NO");
-    // Serial.print(" | ERROR_STATUS:");
-    // Serial.println(error_handling::getErrorText());
+    Serial.print(posture_logic::isMuted() ? "YES" : "NO");
+    Serial.print(" | IP:");
+    Serial.println(local_server::getIP());
   }
 }

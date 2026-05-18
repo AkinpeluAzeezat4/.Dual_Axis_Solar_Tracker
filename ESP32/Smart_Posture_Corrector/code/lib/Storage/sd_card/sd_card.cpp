@@ -3,9 +3,9 @@
 #include <SD.h>
 #include "sd_card.h"
 #include "Pins.h"
-#include "mpu6050_sensor.h"
-#include "battery_level.h"
-#include "posture_logic.h"
+#include "mpu6050_sensor/mpu6050_sensor.h"
+#include "battery_level/battery_level.h"
+#include "posture_logic/posture_logic.h"
 
 namespace sd_card
 {
@@ -19,9 +19,7 @@ namespace sd_card
   static void createHeader()
   {
     if (!ready)
-    {
       return;
-    }
 
     if (!SD.exists(fileName))
     {
@@ -38,25 +36,19 @@ namespace sd_card
   void begin()
   {
     sdSPI.begin(Pins::SD_SCK, Pins::SD_MISO, Pins::SD_MOSI, Pins::SD_CS);
-
     ready = SD.begin(Pins::SD_CS, sdSPI);
-
     createHeader();
   }
 
   void update()
   {
     if (!ready)
-    {
       return;
-    }
 
     unsigned long now = millis();
 
     if (now - lastLog < logInterval)
-    {
       return;
-    }
 
     lastLog = now;
     logNow();
@@ -70,18 +62,14 @@ namespace sd_card
   void logNow()
   {
     if (!ready)
-    {
       return;
-    }
 
     mpu6050_sensor::SensorData data = mpu6050_sensor::getData();
 
     File file = SD.open(fileName, FILE_APPEND);
 
     if (!file)
-    {
       return;
-    }
 
     file.print(millis());
     file.print(',');
@@ -102,5 +90,51 @@ namespace sd_card
     file.println(posture_logic::isMuted() ? 1 : 0);
 
     file.close();
+  }
+
+  String readLogFile()
+  {
+    if (!ready)
+      return "SD card not ready";
+
+    File file = SD.open(fileName, FILE_READ);
+
+    if (!file)
+      return "No log file found";
+
+    String content = "";
+
+    while (file.available())
+    {
+      content += (char)file.read();
+
+      if (content.length() > 12000)
+      {
+        content += "\nLog preview limited. Use download for full file.";
+        break;
+      }
+    }
+
+    file.close();
+    return content;
+  }
+
+  bool clearLogFile()
+  {
+    if (!ready)
+      return false;
+
+    if (SD.exists(fileName))
+    {
+      SD.remove(fileName);
+    }
+
+    createHeader();
+    return true;
+  }
+
+  const char *getLogFileName()
+  {
+    return fileName;
   }
 }

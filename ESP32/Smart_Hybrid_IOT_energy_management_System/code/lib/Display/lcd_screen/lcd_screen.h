@@ -1,6 +1,15 @@
 #pragma once
 
-namespace lcd_screen {
+namespace lcd_screen
+{
   void begin();
-  void update();
+  void update(const char *command);
+
+  int getSelectedItem();
+
+  bool isRelaySetupFinished();
+  void resetRelaySetup();
+
+  int getRelayPower(int relay);
+  int getInverterPower();
 }

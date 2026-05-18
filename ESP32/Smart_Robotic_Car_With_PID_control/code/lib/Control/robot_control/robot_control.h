@@ -5,55 +5,78 @@
 
 namespace robot_control
 {
-    enum Mode
-    {
-        IDLE,
-        MANUAL,
-        AUTO_DRIVE
-    };
+  enum Mode
+  {
+    IDLE,
+    MANUAL,
+    AUTO_AVOIDANCE,
+    AUTO_DRIVE = AUTO_AVOIDANCE
+  };
 
-    enum AutoState
-    {
-        DRIVE_FORWARD,
-        STOP_FOR_SCAN,
-        SCAN_RIGHT,
-        SCAN_LEFT,
-        DECIDE_DIRECTION,
-        TURN_RIGHT,
-        TURN_LEFT,
-        REVERSE_BACK
-    };
+  enum AutoState
+  {
+    DRIVE_FRONT,
+    PREPARE_SCAN,
+    LOOK_LEFT,
+    READ_LEFT,
+    RETURN_CENTER_AFTER_LEFT,
+    LOOK_RIGHT,
+    READ_RIGHT,
+    RETURN_CENTER_AFTER_RIGHT,
+    DECIDE_TURN,
+    ARC_TURNING,
 
-    struct Status
-    {
-        Mode mode = AUTO_DRIVE;
-        AutoState autoState = DRIVE_FORWARD;
+    DRIVE_FORWARD = DRIVE_FRONT,
+    STOP_FOR_SCAN = PREPARE_SCAN,
+    SCAN_LEFT = LOOK_LEFT,
+    SCAN_RIGHT = LOOK_RIGHT,
+    DECIDE_DIRECTION = DECIDE_TURN,
+    TURN_LEFT = ARC_TURNING,
+    TURN_RIGHT = ARC_TURNING,
+    REVERSE_BACK = ARC_TURNING
+  };
 
-        float frontDistance = 999.0f;
-        float rightDistance = 999.0f;
-        float leftDistance = 999.0f;
+  struct Status
+  {
+    Mode mode = AUTO_AVOIDANCE;
+    AutoState autoState = DRIVE_FRONT;
 
-        int16_t targetLeftSpeed = 0;
-        int16_t targetRightSpeed = 0;
-        int16_t currentLeftSpeed = 0;
-        int16_t currentRightSpeed = 0;
+    float frontDistance = 999.0f;
+    float leftDistance = 999.0f;
+    float rightDistance = 999.0f;
 
-        float yaw = 0.0f;
-        float targetYaw = 0.0f;
-        float turnError = 0.0f;
-        uint8_t servoAngle = 90;
-    };
+    int16_t targetLeftSpeed = 0;
+    int16_t targetRightSpeed = 0;
+    int16_t currentLeftSpeed = 0;
+    int16_t currentRightSpeed = 0;
 
-    void begin();
-    void update();
+    float yaw = 0.0f;
+    float targetYaw = 0.0f;
+    float turnError = 0.0f;
 
-    void setMode(Mode mode);
-    void setManualSpeed(int16_t left, int16_t right);
-    void stop();
+    float distancePidOutput = 0.0f;
+    float turnPidOutput = 0.0f;
 
-    Mode getMode();
-    AutoState getAutoState();
-    Status getStatus();
+    uint8_t servoAngle = 90;
+  };
+  
+  void begin();
+  void update();
+
+  void setMode(Mode mode);
+  void setManualSpeed(int16_t left, int16_t right);
+  void stop();
+
+  Mode getMode();
+  AutoState getAutoState();
+  Status getStatus();
+
+  float getFrontDistance();
+  float getLeftDistance();
+  float getRightDistance();
+
+  int16_t getLeftSpeed();
+  int16_t getRightSpeed();
 }
 
 #endif

@@ -1,6 +1,8 @@
 #pragma once
 
-namespace reset {
+namespace reset
+{
   void begin();
   void update();
+  void restart();
 }
