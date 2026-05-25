@@ -1,28 +1,18 @@
 #include <Arduino.h>
 #include "Pins.h"
 #include "load_relay.h"
-#include "current_sensor/current_sensor.h"
-#include "temp_sensor/temp_sensor.h"
-#include "vibration_sensor/vibration_sensor.h"
-#include "buzzer/buzzer.h"
-#include "error_handling/error_handling.h"
 
 namespace load_relay
 {
   static const bool RELAY_ACTIVE_HIGH = true;
 
-  static const float MAX_CURRENT_A = 5.0;
-  static const float MAX_TEMPERATURE_C = 70.0;
-  static const float MAX_VIBRATION_RMS_G = 2.5;
-
-  static bool relayOn = true;
-  static bool userRelayState = true;
-  static bool fault = false;
+  static bool relayOn = false;
+  static bool requestedState = true;
+  static bool faultLatched = false;
 
   static void writeRelay(bool state)
   {
     relayOn = state;
-
     bool level = RELAY_ACTIVE_HIGH ? state : !state;
     Pins::writePin(Pins::RELAY, level);
   }
@@ -30,37 +20,29 @@ namespace load_relay
   void begin()
   {
     pinMode(Pins::RELAY, OUTPUT);
-    writeRelay(userRelayState);
+    faultLatched = false;
+    requestedState = true;
+    writeRelay(requestedState);
   }
 
   void update()
   {
-    bool currentFault = current_sensor::getCurrentA() > MAX_CURRENT_A;
-    bool tempFault = temp_sensor::isValid() && temp_sensor::getTemperatureC() > MAX_TEMPERATURE_C;
-    bool vibrationFault = vibration_sensor::isReady() && vibration_sensor::getVibrationRMS() > MAX_VIBRATION_RMS_G;
-
-    fault = currentFault || tempFault || vibrationFault;
-
-    error_handling::setCodeError(fault);
-
-    if (fault)
+    if (faultLatched)
     {
       writeRelay(false);
-      buzzer::startAlarm();
       return;
     }
 
-    buzzer::stopAlarm();
-    writeRelay(userRelayState);
+    writeRelay(requestedState);
   }
 
   void setOn(bool state)
   {
-    userRelayState = state;
+    requestedState = state;
 
-    if (!fault)
+    if (!faultLatched)
     {
-      writeRelay(userRelayState);
+      writeRelay(requestedState);
     }
   }
 
@@ -74,6 +56,18 @@ namespace load_relay
     setOn(false);
   }
 
+  void trip()
+  {
+    faultLatched = true;
+    writeRelay(false);
+  }
+
+  void clearFault()
+  {
+    faultLatched = false;
+    writeRelay(requestedState);
+  }
+
   bool isOn()
   {
     return relayOn;
@@ -81,17 +75,11 @@ namespace load_relay
 
   bool isFault()
   {
-    return fault;
+    return faultLatched;
   }
 
-  void clearFault()
+  bool getRequestedState()
   {
-    fault = false;
-
-    if (!fault)
-    {
-      writeRelay(userRelayState);
-      buzzer::stopAlarm();
-    }
+    return requestedState;
   }
 }

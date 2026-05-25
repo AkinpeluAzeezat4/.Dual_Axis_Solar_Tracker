@@ -10,6 +10,7 @@ namespace Pins
 
   extern const uint8_t ADXL345_INT;
   extern const uint8_t ZMCT103C_ADC;
+  extern const uint8_t AC_VOLTAGE_ADC;
   extern const uint8_t DS18B20_DATA;
 
   extern const uint8_t SD_CS;

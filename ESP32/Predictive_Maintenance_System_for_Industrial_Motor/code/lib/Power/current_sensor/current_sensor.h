@@ -11,8 +11,10 @@ namespace current_sensor
   float getCurrentA();
   float getVoltageRMS();
   int getRawADC();
+  bool hasFreshReading();
 
   void setCalibration(float calibration);
+  float getCalibration();
 }
 
 #endif

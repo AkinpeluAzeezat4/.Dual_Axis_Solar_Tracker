@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "Pins.h"
 #include "led_indicator.h"
-#include "load_relay/load_relay.h"
+#include "maintenance_manager/maintenance_manager.h"
 
 namespace led_indicator
 {
@@ -14,16 +14,17 @@ namespace led_indicator
   static uint8_t brightness = 0;
   static bool rising = true;
   static bool state = false;
+  static bool forcedMode = false;
 
   static unsigned long lastUpdate = 0;
-  static const uint16_t stepTime = 4;
+  static unsigned long lastBlink = 0;
+  static const uint16_t normalStepTime = 4;
+  static const uint16_t warningStepTime = 2;
 
   static uint8_t pulseCount = 0;
   static bool inPause = false;
   static unsigned long pauseStart = 0;
   static const uint16_t pauseDuration = 1000;
-
-  static bool forcedMode = false;
 
   static void writeBrightness(uint8_t value)
   {
@@ -32,62 +33,38 @@ namespace led_indicator
     ledcWrite(pwmChannel, brightness);
   }
 
-  void begin()
+  static void blinkUpdate(uint16_t interval)
   {
-    ledcSetup(pwmChannel, pwmFreq, pwmResolution);
-    ledcAttachPin(ledPin, pwmChannel);
-    writeBrightness(0);
-  }
-
-  void update()
-  {
-    if (forcedMode)
-    {
-      return;
-    }
-
     unsigned long now = millis();
 
-    if (load_relay::isFault())
+    if (now - lastBlink >= interval)
     {
-      static unsigned long lastFaultBlink = 0;
-      static bool faultState = false;
-
-      if (now - lastFaultBlink >= 150)
-      {
-        lastFaultBlink = now;
-        faultState = !faultState;
-        writeBrightness(faultState ? 255 : 0);
-      }
-
-      return;
+      lastBlink = now;
+      writeBrightness(state ? 0 : 255);
     }
+  }
+
+  static void breathingUpdate(uint16_t stepTime)
+  {
+    unsigned long now = millis();
 
     if (inPause)
     {
       if (now - pauseStart >= pauseDuration)
-      {
         inPause = false;
-      }
       else
-      {
         return;
-      }
     }
 
     if (now - lastUpdate < stepTime)
-    {
       return;
-    }
 
     lastUpdate = now;
 
     if (rising)
     {
       if (brightness < 255)
-      {
         brightness++;
-      }
 
       if (brightness >= 255)
       {
@@ -98,9 +75,7 @@ namespace led_indicator
     else
     {
       if (brightness > 0)
-      {
         brightness--;
-      }
 
       if (brightness <= 0)
       {
@@ -120,6 +95,40 @@ namespace led_indicator
     writeBrightness(brightness);
   }
 
+  void begin()
+  {
+    ledcSetup(pwmChannel, pwmFreq, pwmResolution);
+    ledcAttachPin(ledPin, pwmChannel);
+    forcedMode = false;
+    writeBrightness(0);
+  }
+
+  void update()
+  {
+    if (forcedMode)
+      return;
+
+    if (maintenance_manager::isFault())
+    {
+      blinkUpdate(120);
+      return;
+    }
+
+    if (maintenance_manager::isCritical())
+    {
+      blinkUpdate(300);
+      return;
+    }
+
+    if (maintenance_manager::isWarning())
+    {
+      breathingUpdate(warningStepTime);
+      return;
+    }
+
+    breathingUpdate(normalStepTime);
+  }
+
   void on()
   {
     forcedMode = true;
@@ -130,6 +139,11 @@ namespace led_indicator
   {
     forcedMode = true;
     writeBrightness(0);
+  }
+
+  void resume()
+  {
+    forcedMode = false;
   }
 
   bool isOn()

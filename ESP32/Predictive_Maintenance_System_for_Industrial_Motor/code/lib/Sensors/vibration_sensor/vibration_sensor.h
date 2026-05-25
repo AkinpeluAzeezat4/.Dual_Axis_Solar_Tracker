@@ -13,8 +13,10 @@ namespace vibration_sensor
   float getZ();
 
   float getVibrationRMS();
+  float getBaseMagnitude();
 
   bool isReady();
+  void recalibrateBaseline();
 }
 
 #endif

@@ -1,268 +1,138 @@
 # Smart Transformer Health Monitoring System
 
-## Overview
+This project is an ESP32-S3 based smart transformer health monitoring system. It monitors transformer temperature, load current, AC voltage, vibration, relay status, storage status, and predictive maintenance condition from a local web dashboard.
 
-This project is a modular Smart Transformer Health Monitoring System Monitoring built around the ESP32-S3 WROOM-1U using a structured PlatformIO architecture.
+## Main Features
 
-The system continuously monitors:
-- Transformer vibration
-- Transformer current consumption
-- Transformer temperature
+- Smart transformer health monitoring with temperature, current, voltage, and vibration analysis
+- Predictive maintenance risk score and transformer health score
+- Future fault estimate based on changing temperature, current, voltage, and vibration trends
+- Local web dashboard hosted directly by the ESP32-S3
+- SD card backend for transformer logs, analysis logs, and event logs
+- Internal LittleFS fallback when SD card is not available
+- Relay protection output for disconnecting the transformer load during fault condition
+- LCD display pages for live data, health status, future analysis, backend status, and ADC readings
+- Dark and light dashboard theme with icon toggle
 
-The ESP32-S3 processes sensor data locally to detect:
-- mechanical wear
-- overload conditions
-- overheating
-- excessive vibration
-- possible Transformer failure
+## Important Safety Note
 
-The system includes:
-- 20x4 I2C LCD monitoring
-- SD card logging
-- automatic relay shutdown
-- buzzer alarm
-- breathing status LED
-- rotary encoder navigation
+The ESP32 ADC pin must never be connected directly to AC mains or a high-voltage transformer terminal. The voltage sensing input on GPIO2 must receive only a properly isolated, scaled, and biased low-voltage waveform within the ESP32 ADC range. For mains or high-voltage transformer measurement, use a proper isolated voltage sensing module such as a ZMPT101B-type module or another certified isolated voltage transducer.
 
----
+## Main Pin Assignment
 
-# Features
-
-- ESP32-S3 WROOM-1U based system
-- ADXL345 vibration monitoring
-- ZMCT103C current monitoring
-- DS18B20 temperature monitoring
-- 20x4 I2C LCD display
-- SD card CSV logging
-- Relay protection
-- Fault detection system
-- Rotary encoder navigation
-- Breathing LED indication
-- Modular PlatformIO structure
-- Non-blocking firmware design
-
----
-
-# Hardware Used
-
-## Main Controller
-- ESP32-S3 WROOM-1U
-
-## Display
-- 20x4 I2C LCD
-
-## Sensors
-- ADXL345 vibration sensor
-- ZMCT103C current sensor
-- DS18B20 temperature sensor
-
-## Storage
-- MicroSD card module
-
-## User Input
-- Rotary encoder
-
-## Output Devices
-- Relay module
-- Active buzzer
-- Onboard LED
-
----
-
-# Pin Configuration
-
-## I2C Bus
-
-| Function | GPIO |
-|---|---|
-| LCD SDA | GPIO8 |
-| LCD SCL | GPIO9 |
-| ADXL345 SDA | GPIO8 |
-| ADXL345 SCL | GPIO9 |
-
----
-
-## Sensors
-
-| Function | GPIO |
-|---|---|
+| Function | ESP32-S3 GPIO |
+|---|---:|
+| I2C SDA | GPIO8 |
+| I2C SCL | GPIO9 |
 | ADXL345 INT | GPIO10 |
-| ZMCT103C ADC | GPIO1 |
-| DS18B20 DATA | GPIO4 |
-
----
-
-## SD Card SPI
-
-| Function | GPIO |
-|---|---|
+| ZMCT103C current ADC | GPIO1 |
+| Transformer AC voltage ADC | GPIO2 |
+| DS18B20 data | GPIO4 |
 | SD CS | GPIO5 |
 | SD MOSI | GPIO11 |
 | SD SCK | GPIO12 |
 | SD MISO | GPIO13 |
-
----
-
-## Rotary Encoder
-
-| Function | GPIO |
-|---|---|
-| CLK | GPIO16 |
-| DT | GPIO17 |
-| SW | GPIO18 |
-
----
-
-## Outputs
-
-| Function | GPIO |
-|---|---|
-| Relay | GPIO21 |
 | Buzzer | GPIO14 |
+| Rotary encoder CLK | GPIO16 |
+| Rotary encoder DT | GPIO17 |
+| Rotary encoder SW | GPIO18 |
+| Transformer relay | GPIO21 |
 | Status LED | GPIO48 |
 
----
+## Voltage Measurement Input
 
-# Protection Thresholds
+GPIO2 has been assigned as the free ADC pin for transformer AC voltage sensing.
 
-| Parameter | Threshold |
-|---|---|
-| Current | 5.0 A |
-| Temperature | 70 °C |
-| Vibration RMS | 2.5 g |
-
----
-
-# SD Card Logging
-
-Example log file:
-
-```csv
-millis,temp_c,current_a,vibration_rms_g,relay_on,fault
-1200,32.4,1.22,0.11,1,0
-5200,33.1,1.35,0.10,1,0
-10200,71.0,2.80,3.10,0,1
-```
-
----
-
-# LED Behaviour
-
-## Normal
-- breathing LED effect
-
-## Fault
-- fast blinking LED
-
----
-
-# Relay Protection
-
-The relay disconnects the Transformer automatically when:
-- current exceeds threshold
-- temperature exceeds threshold
-- vibration exceeds threshold
-
----
-
-# Project Structure
+The new module is located at:
 
 ```text
-lib/
-├── Actuators/
-│   └── buzzer/
-├── Communication/
-│   └── wifi_manager/
-├── Control/
-│   ├── error_handling/
-│   ├── load_relay/
-│   └── sleep_wake/
-├── Display/
-│   ├── lcd_screen/
-│   └── led_indicator/
-├── Input/
-│   └── rotary_encoder/
-├── Pins/
-├── Sensors/
-│   ├── current_sensor/
-│   ├── temp_sensor/
-│   └── vibration_sensor/
-├── Storage/
-│   └── sd_card/
-├── System/
-│   └── reset/
-
-src/
-└── main.cpp
+lib/Power/voltage_sensor/voltage_sensor.h
+lib/Power/voltage_sensor/voltage_sensor.cpp
 ```
 
----
+The firmware measures the AC component by sampling the ADC waveform, removing the DC bias mathematically, calculating RMS at the ADC pin, and multiplying it by the voltage calibration factor.
 
-# PlatformIO Environment
+Default calibration value:
+
+```cpp
+static float sensorCalibration = 100.0f;
+```
+
+Adjust this value after comparing the dashboard reading with a trusted meter reading.
+
+## Web Dashboard
+
+Connect to the ESP32 access point:
+
+```text
+SSID: TRANSFORMER_HM_SYSTEM
+Password: 12345678
+```
+
+Then open:
+
+```text
+http://192.168.4.1
+```
+
+The dashboard shows:
+
+- Transformer temperature
+- Transformer AC voltage
+- Transformer current
+- Transformer vibration RMS
+- Risk score
+- Health score
+- Future fault estimate
+- Worst metric
+- Recommendation
+- Relay control
+- Recent transformer data log
+- Recent analysis log
+- Recent event log
+
+## Storage Files
+
+The project now stores transformer-related logs for transformer health history.
+
+| File | Purpose |
+|---|---|
+| `/transformer_log.csv` | Main transformer sensor and condition data |
+| `/analysis_log.csv` | Predictive maintenance analysis and recommendations |
+| `/event_log.csv` | Boot, relay, fault, storage, and state-change events |
+
+## Predictive Logic
+
+The transformer health logic uses:
+
+- Temperature severity
+- Current severity
+- Voltage abnormality severity
+- Vibration severity
+- Trend rate per minute
+- Estimated time-to-fault
+
+Default voltage limits are configured for a 230 V class transformer output/input reading:
+
+| Limit | Default |
+|---|---:|
+| Low warning | 180 V |
+| Low fault | 160 V |
+| High warning | 250 V |
+| High fault | 270 V |
+
+These values should be adjusted if the monitored transformer voltage is not a 230 V class AC voltage.
+
+## Build and Upload
+
+Open the `code` folder in VS Code with PlatformIO, then build and upload using the environment:
 
 ```ini
-[env:esp32-s3-devkitm-1]
-platform = espressif32
-board = esp32-s3-devkitm-1
-framework = arduino
-monitor_speed = 115200
+[env:esp32-s3-wroom-1u]
 ```
 
----
+Serial monitor speed:
 
-# Build and Upload
-
-## Build
-
-```bash
-pio run
+```text
+115200 baud
 ```
-
-## Upload
-
-```bash
-pio run --target upload
-```
-
-## Serial Monitor
-
-```bash
-pio device monitor
-```
-
----
-
-# Important Notes
-
-- Use a proper conditioning circuit for the ZMCT103C
-- DS18B20 requires a 4.7k pull-up resistor
-- Ensure relay module is 3.3V compatible
-- Use proper isolation when working with industrial Transformers
-- The system uses non-blocking firmware architecture
-
----
-
-# Future Improvements
-
-- Wi-Fi dashboard
-- OTA update support
-- Cloud logging
-- Machine learning prediction
-- MQTT integration
-- Historical graph analysis
-
----
-
-# Author
-
-Egbe Raymond
-
-Electrical / Electronic Engineer  
-Embedded Systems Developer  
-Full Stack Developer
-
----
-
-# License
-
-This project is intended for educational, industrial prototype, and development purposes.

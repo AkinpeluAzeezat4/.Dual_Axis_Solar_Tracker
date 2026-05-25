@@ -12,10 +12,12 @@ namespace load_relay
   void turnOn();
   void turnOff();
 
+  void trip();
+  void clearFault();
+
   bool isOn();
   bool isFault();
-
-  void clearFault();
+  bool getRequestedState();
 }
 
 #endif

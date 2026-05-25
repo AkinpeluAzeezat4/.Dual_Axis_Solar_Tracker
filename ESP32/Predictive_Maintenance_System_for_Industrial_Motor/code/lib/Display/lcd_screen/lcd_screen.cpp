@@ -9,6 +9,8 @@
 #include "load_relay/load_relay.h"
 #include "sd_card/sd_card.h"
 #include "rotary_encoder/rotary_encoder.h"
+#include "maintenance_manager/maintenance_manager.h"
+#include "local_server/local_server.h"
 
 namespace lcd_screen
 {
@@ -16,7 +18,7 @@ namespace lcd_screen
 
   static unsigned long lastUpdate = 0;
   static uint8_t screen = 0;
-  static const uint8_t screenCount = 3;
+  static const uint8_t screenCount = 5;
 
   static void printFixed(uint8_t col, uint8_t row, const String &text)
   {
@@ -25,40 +27,63 @@ namespace lcd_screen
     String out = text;
 
     while (out.length() < 20 - col)
-    {
       out += ' ';
-    }
 
     if (out.length() > 20 - col)
-    {
       out = out.substring(0, 20 - col);
-    }
 
     lcd.print(out);
   }
 
+  static String forecastShort(float minutes)
+  {
+    if (minutes < 0.0f)
+      return "No trend";
+
+    if (minutes < 60.0f)
+      return String(minutes, 0) + " min";
+
+    return String(minutes / 60.0f, 1) + " hr";
+  }
+
   static void drawScreen()
   {
+    maintenance_manager::Snapshot snap = maintenance_manager::getSnapshot();
+
     if (screen == 0)
     {
       printFixed(0, 0, "MOTOR LIVE DATA");
-      printFixed(0, 1, "Temp: " + String(temp_sensor::getTemperatureC(), 1) + " C");
-      printFixed(0, 2, "Curr: " + String(current_sensor::getCurrentA(), 2) + " A");
-      printFixed(0, 3, "Vib : " + String(vibration_sensor::getVibrationRMS(), 3) + " g");
+      printFixed(0, 1, String("Temp: ") + (temp_sensor::isValid() ? String(temp_sensor::getTemperatureC(), 1) + " C" : "N/A"));
+      printFixed(0, 2, String("Curr: ") + String(current_sensor::getCurrentA(), 2) + " A");
+      printFixed(0, 3, String("Vib : ") + String(vibration_sensor::getVibrationRMS(), 3) + " g");
     }
     else if (screen == 1)
     {
+      printFixed(0, 0, "PREDICTIVE STATUS");
+      printFixed(0, 1, String("Level: ") + maintenance_manager::getLevelText());
+      printFixed(0, 2, String("Risk : ") + String(maintenance_manager::getRiskScore(), 1) + "%");
+      printFixed(0, 3, String("Health: ") + String(maintenance_manager::getHealthScore(), 1) + "%");
+    }
+    else if (screen == 2)
+    {
+      printFixed(0, 0, "FUTURE ANALYSIS");
+      printFixed(0, 1, String("Worst: ") + maintenance_manager::getWorstMetric());
+      printFixed(0, 2, String("Forecast: ") + forecastShort(maintenance_manager::getForecastMinutes()));
+      printFixed(0, 3, String("Backend : ") + String(sd_card::getBackendName()));
+    }
+    else if (screen == 3)
+    {
       printFixed(0, 0, "SYSTEM STATUS");
-      printFixed(0, 1, String("Relay: ") + (load_relay::isOn() ? "ON" : "OFF"));
-      printFixed(0, 2, String("Fault: ") + (load_relay::isFault() ? "YES" : "NO"));
-      printFixed(0, 3, String("SD: ") + (sd_card::isReady() ? "READY" : "NOT READY"));
+      printFixed(0, 1, String("Relay: ") + (load_relay::isOn() ? "ON" : "OFF") + String(" Fault:") + (maintenance_manager::isFault() ? "Y" : "N"));
+      printFixed(0, 2, String("SD:") + (sd_card::isReady() ? "READY" : "NO") + " INT:" + (sd_card::isInternalReady() ? "OK" : "NO"));
+      printFixed(0, 3, String("IP: ") + local_server::getIp());
     }
     else
     {
       printFixed(0, 0, "ACCELERATION g");
-      printFixed(0, 1, "X: " + String(vibration_sensor::getX(), 2));
-      printFixed(0, 2, "Y: " + String(vibration_sensor::getY(), 2));
-      printFixed(0, 3, "Z: " + String(vibration_sensor::getZ(), 2));
+      printFixed(0, 1, String("X: ") + String(snap.xG, 2));
+      printFixed(0, 2, String("Y: ") + String(snap.yG, 2));
+      printFixed(0, 3, String("Z: ") + String(snap.zG, 2));
     }
   }
 
@@ -71,9 +96,9 @@ namespace lcd_screen
     lcd.clear();
 
     printFixed(0, 0, "Predictive Maint.");
-    printFixed(0, 1, "ESP32-S3 Starting");
-    printFixed(0, 2, "LCD + ADXL345 I2C");
-    printFixed(0, 3, "Please wait...");
+    printFixed(0, 1, "Industrial Motor");
+    printFixed(0, 2, "ESP32-S3 WROOM-1U");
+    printFixed(0, 3, "Starting system...");
   }
 
   void update()
@@ -94,9 +119,7 @@ namespace lcd_screen
     }
 
     if (!screenChanged && millis() - lastUpdate < 500)
-    {
       return;
-    }
 
     lastUpdate = millis();
     drawScreen();
@@ -105,9 +128,7 @@ namespace lcd_screen
   void setScreen(uint8_t index)
   {
     if (index >= screenCount)
-    {
       return;
-    }
 
     screen = index;
     lastUpdate = 0;

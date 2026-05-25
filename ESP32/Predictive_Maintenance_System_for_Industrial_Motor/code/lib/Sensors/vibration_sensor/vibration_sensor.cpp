@@ -19,8 +19,47 @@ namespace vibration_sensor
   static float baseMagnitude = 9.81f;
   static float vibrationRms = 0.0f;
 
-  static unsigned long lastUpdate = 0;
-  static const unsigned long interval = 100;
+  static const uint8_t samplesTarget = 20;
+  static const unsigned long samplePeriodMs = 2;
+  static const unsigned long cycleIntervalMs = 100;
+
+  static bool sampling = false;
+  static uint8_t samplesTaken = 0;
+  static float sumSq = 0.0f;
+  static unsigned long lastSample = 0;
+  static unsigned long lastCycle = 0;
+
+  static float readMagnitudeAndUpdateAxis()
+  {
+    sensors_event_t event;
+    adxl.getEvent(&event);
+
+    x = event.acceleration.x / 9.80665f;
+    y = event.acceleration.y / 9.80665f;
+    z = event.acceleration.z / 9.80665f;
+
+    return sqrt(
+        event.acceleration.x * event.acceleration.x +
+        event.acceleration.y * event.acceleration.y +
+        event.acceleration.z * event.acceleration.z);
+  }
+
+  static void startSampling()
+  {
+    sampling = true;
+    samplesTaken = 0;
+    sumSq = 0.0f;
+    lastSample = millis();
+  }
+
+  static void finishSampling()
+  {
+    if (samplesTaken > 0)
+      vibrationRms = sqrt(sumSq / samplesTaken);
+
+    sampling = false;
+    lastCycle = millis();
+  }
 
   void begin()
   {
@@ -31,51 +70,38 @@ namespace vibration_sensor
     if (ready)
     {
       adxl.setRange(ADXL345_RANGE_16_G);
-
-      sensors_event_t event;
-      adxl.getEvent(&event);
-
-      baseMagnitude = sqrt(
-          event.acceleration.x * event.acceleration.x +
-          event.acceleration.y * event.acceleration.y +
-          event.acceleration.z * event.acceleration.z);
+      recalibrateBaseline();
+      lastCycle = 0;
+      startSampling();
     }
   }
 
   void update()
   {
-    if (!ready || millis() - lastUpdate < interval)
-    {
+    if (!ready)
       return;
-    }
 
-    lastUpdate = millis();
+    unsigned long now = millis();
 
-    const uint8_t samples = 20;
-    float sumSq = 0.0f;
+    if (!sampling && now - lastCycle >= cycleIntervalMs)
+      startSampling();
 
-    for (uint8_t i = 0; i < samples; i++)
-    {
-      sensors_event_t event;
-      adxl.getEvent(&event);
+    if (!sampling)
+      return;
 
-      x = event.acceleration.x / 9.80665f;
-      y = event.acceleration.y / 9.80665f;
-      z = event.acceleration.z / 9.80665f;
+    if (now - lastSample < samplePeriodMs)
+      return;
 
-      float mag = sqrt(
-          event.acceleration.x * event.acceleration.x +
-          event.acceleration.y * event.acceleration.y +
-          event.acceleration.z * event.acceleration.z);
+    lastSample = now;
 
-      float deltaG = (mag - baseMagnitude) / 9.80665f;
+    float mag = readMagnitudeAndUpdateAxis();
+    float deltaG = (mag - baseMagnitude) / 9.80665f;
 
-      sumSq += deltaG * deltaG;
+    sumSq += deltaG * deltaG;
+    samplesTaken++;
 
-      delay(2);
-    }
-
-    vibrationRms = sqrt(sumSq / samples);
+    if (samplesTaken >= samplesTarget)
+      finishSampling();
   }
 
   float getX()
@@ -98,8 +124,30 @@ namespace vibration_sensor
     return vibrationRms;
   }
 
+  float getBaseMagnitude()
+  {
+    return baseMagnitude;
+  }
+
   bool isReady()
   {
     return ready;
+  }
+
+  void recalibrateBaseline()
+  {
+    if (!ready)
+      return;
+
+    float sum = 0.0f;
+    const uint8_t count = 20;
+
+    for (uint8_t i = 0; i < count; i++)
+    {
+      sum += readMagnitudeAndUpdateAxis();
+      delay(2);
+    }
+
+    baseMagnitude = sum / count;
   }
 }

@@ -8,6 +8,7 @@ namespace Pins
 
   const uint8_t ADXL345_INT = 10;
   const uint8_t ZMCT103C_ADC = 1;
+  const uint8_t AC_VOLTAGE_ADC = 2;
   const uint8_t DS18B20_DATA = 4;
 
   const uint8_t SD_CS = 5;
@@ -42,6 +43,7 @@ namespace Pins
 
     pinMode(ADXL345_INT, INPUT_PULLUP);
     pinMode(ZMCT103C_ADC, INPUT);
+    pinMode(AC_VOLTAGE_ADC, INPUT);
   }
 
   int readPin(uint8_t gpio)

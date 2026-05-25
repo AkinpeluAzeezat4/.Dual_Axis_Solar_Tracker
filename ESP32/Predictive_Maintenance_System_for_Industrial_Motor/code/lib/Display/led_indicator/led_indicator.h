@@ -10,6 +10,7 @@ namespace led_indicator
 
   void on();
   void off();
+  void resume();
 
   bool isOn();
 }
