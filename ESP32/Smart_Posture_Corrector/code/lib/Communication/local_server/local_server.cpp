@@ -81,7 +81,7 @@ namespace local_server
     html += F("function applyTheme(){document.body.classList.toggle('dark',dark);document.getElementById('themeBtn').innerText=dark?'Light Theme':'Dark Theme';localStorage.setItem('theme',dark?'dark':'light')}");
     html += F("function toggleTheme(){dark=!dark;applyTheme()}");
     html += F("function setStateUI(state,muted){const s=document.getElementById('state');const c=document.getElementById('stateCircle');const h=document.getElementById('stateHelp');if(!s)return;s.innerText=state;if(state==='GOOD'){s.style.color='var(--success)';c.style.borderColor='var(--success)';c.style.background='rgba(3,152,85,.13)';h.innerText='Your posture is currently within the calibrated safe range.'}else if(state==='BAD'){s.style.color='var(--warning)';c.style.borderColor='var(--warning)';c.style.background='rgba(247,144,9,.15)';h.innerText='Bad posture detected. Alert will trigger if it continues.'}else{s.style.color='var(--danger)';c.style.borderColor='var(--danger)';c.style.background='rgba(217,45,32,.15)';h.innerText='Posture alert is active. Please correct your posture.'}}");
-    html += F("function refreshData(){fetch('/api').then(r=>r.json()).then(d=>{setStateUI(d.state,d.muted);document.getElementById('battery').innerText=d.battery_voltage+'V / '+d.battery_percent+'%';document.getElementById('batteryFill').style.width=d.battery_percent+'%';document.getElementById('mute').innerText=d.muted;document.getElementById('baseline').innerText=d.baseline+'°';document.getElementById('error').innerText=d.pitch_error+'°';document.getElementById('pitch').innerText=d.pitch+'°';document.getElementById('roll').innerText=d.roll+'°';document.getElementById('motor').innerText=d.motor;document.getElementById('buzzer').innerText=d.buzzer;document.getElementById('sdPill').innerText=d.sd==='OK'?'SD CARD OK':'SD CARD ERROR';});}");
+    html += F("function refreshData(){fetch('/api').then(r=>r.json()).then(d=>{setStateUI(d.state,d.muted);document.getElementById('battery').innerText=d.battery_voltage+'V / '+d.battery_percent+'%';document.getElementById('batteryFill').style.width=d.battery_percent+'%';document.getElementById('mute').innerText=d.muted;document.getElementById('baseline').innerText=d.baseline+'°';document.getElementById('error').innerText=d.pitch_error+'°';document.getElementById('pitch').innerText=d.pitch+'°';document.getElementById('roll').innerText=d.roll+'°';document.getElementById('motor').innerText=d.motor;document.getElementById('buzzer').innerText=d.buzzer;document.getElementById('sdPill').innerText=d.storage==='SD'?'SD CARD ACTIVE':(d.storage==='INTERNAL'?'INTERNAL STORAGE ACTIVE':'NO STORAGE');});}");
     html += F("applyTheme();refreshData();setInterval(refreshData,1000);");
     html += F("</script></body></html>");
 
@@ -154,7 +154,8 @@ namespace local_server
     json += "\"baseline\":\"" + String(posture_logic::getBaselinePitch(), 2) + "\",";
     json += "\"battery_voltage\":\"" + String(battery_level::getVoltage(), 2) + "\",";
     json += "\"battery_percent\":\"" + String(battery_level::getPercentage()) + "\",";
-    json += "\"sd\":\"" + String(sd_card::isReady() ? "OK" : "NO") + "\",";
+    json += "\"sd\":\"" + String(sd_card::isSdReady() ? "OK" : "NO") + "\",";
+    json += "\"storage\":\"" + String(sd_card::getStorageName()) + "\",";
     json += "\"muted\":\"" + String(posture_logic::isMuted() ? "YES" : "NO") + "\",";
     json += "\"motor\":\"" + String(vibration_motor::isActive() ? "ON" : "OFF") + "\",";
     json += "\"buzzer\":\"" + String(buzzer::isActive() ? "ON" : "OFF") + "\"";
@@ -192,21 +193,12 @@ namespace local_server
   {
     if (!sd_card::isReady())
     {
-      server.send(500, "text/plain", "SD card not ready");
-      return;
-    }
-
-    File file = SD.open(sd_card::getLogFileName(), FILE_READ);
-
-    if (!file)
-    {
-      server.send(404, "text/plain", "Log file not found");
+      server.send(500, "text/plain", "No storage available");
       return;
     }
 
     server.sendHeader("Content-Disposition", "attachment; filename=posture_log.csv");
-    server.streamFile(file, "text/csv");
-    file.close();
+    server.send(200, "text/csv", sd_card::readFullLogFile());
   }
 
   static void handleClear()

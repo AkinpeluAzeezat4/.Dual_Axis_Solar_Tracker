@@ -1,12 +1,18 @@
 #include <Arduino.h>
+#include <FS.h>
 #include <SPI.h>
 #include <SD.h>
+#include <LittleFS.h>
 #include "sd_card.h"
 #include "Pins.h"
 
 namespace sd_card
 {
   static bool ready = false;
+  static bool sdReady = false;
+  static bool internalReady = false;
+  static fs::FS *activeFs = nullptr;
+  static String storageName = "None";
 
   static const char *configPath = "/config.txt";
   static const char *usersPath = "/users.csv";
@@ -54,21 +60,13 @@ namespace sd_card
     return "";
   }
 
-  void begin()
+  static fs::FS &fsRef()
   {
-    SPI.begin(Pins::SHARED_SCK, Pins::SHARED_MISO, Pins::SHARED_MOSI);
+    return *activeFs;
+  }
 
-    pinMode(Pins::RC522_SS, OUTPUT);
-    digitalWrite(Pins::RC522_SS, HIGH);
-
-    pinMode(Pins::SD_CARD_CS, OUTPUT);
-    digitalWrite(Pins::SD_CARD_CS, HIGH);
-
-    ready = SD.begin(Pins::SD_CARD_CS, SPI, 4000000);
-
-    if (!ready)
-      return;
-
+  static void initializeFiles()
+  {
     ensureFile(configPath,
                "system_name=Fingerprint RFID Attendance System\n"
                "workspace_name=Prototype Workspace\n"
@@ -81,21 +79,93 @@ namespace sd_card
     ensureFile(attendancePath, "timestamp,user_id,name,method,direction,workspace,credential,record_hash\n");
   }
 
+  void begin()
+  {
+    ready = false;
+    sdReady = false;
+    internalReady = false;
+    activeFs = nullptr;
+    storageName = "None";
+
+    SPI.begin(Pins::SHARED_SCK, Pins::SHARED_MISO, Pins::SHARED_MOSI);
+
+    pinMode(Pins::RC522_SS, OUTPUT);
+    digitalWrite(Pins::RC522_SS, HIGH);
+
+    pinMode(Pins::SD_CARD_CS, OUTPUT);
+    digitalWrite(Pins::SD_CARD_CS, HIGH);
+
+    sdReady = SD.begin(Pins::SD_CARD_CS, SPI, 4000000);
+
+    if (sdReady)
+    {
+      activeFs = &SD;
+      storageName = "SD Card";
+      ready = true;
+      initializeFiles();
+      return;
+    }
+
+    internalReady = LittleFS.begin(true);
+
+    if (internalReady)
+    {
+      activeFs = &LittleFS;
+      storageName = "Internal Flash";
+      ready = true;
+      initializeFiles();
+      return;
+    }
+
+    ready = false;
+  }
+
   void update()
   {
   }
 
   bool isReady()
   {
-    return ready;
+    return ready && activeFs != nullptr;
+  }
+
+  bool isSdCardReady()
+  {
+    return ready && sdReady && activeFs == &SD;
+  }
+
+  bool isInternalReady()
+  {
+    return ready && internalReady && activeFs == &LittleFS;
+  }
+
+  String getStorageName()
+  {
+    return storageName;
+  }
+
+  bool exists(const String &path)
+  {
+    if (!isReady())
+      return false;
+
+    return fsRef().exists(path);
+  }
+
+  File openRead(const String &path)
+  {
+    if (!isReady())
+      return File();
+
+    return fsRef().open(path, FILE_READ);
   }
 
   bool appendLine(const String &path, const String &line)
   {
-    if (!ready)
+    if (!isReady())
       return false;
 
-    File file = SD.open(path, FILE_APPEND);
+    File file = fsRef().open(path, FILE_APPEND);
 
     if (!file)
       return false;
@@ -108,13 +178,13 @@ namespace sd_card
 
   bool writeFile(const String &path, const String &content)
   {
-    if (!ready)
+    if (!isReady())
       return false;
 
-    if (SD.exists(path))
-      SD.remove(path);
+    if (fsRef().exists(path))
+      fsRef().remove(path);
 
-    File file = SD.open(path, FILE_WRITE);
+    File file = fsRef().open(path, FILE_WRITE);
 
     if (!file)
       return false;
@@ -127,13 +197,13 @@ namespace sd_card
 
   bool ensureFile(const String &path, const String &header)
   {
-    if (!ready)
+    if (!isReady())
       return false;
 
-    if (SD.exists(path))
+    if (fsRef().exists(path))
       return true;
 
-    File file = SD.open(path, FILE_WRITE);
+    File file = fsRef().open(path, FILE_WRITE);
 
     if (!file)
       return false;
@@ -148,10 +218,10 @@ namespace sd_card
   {
     String data;
 
-    if (!ready)
+    if (!isReady())
       return data;
 
-    File file = SD.open(path, FILE_READ);
+    File file = fsRef().open(path, FILE_READ);
 
     if (!file)
       return data;
@@ -166,10 +236,10 @@ namespace sd_card
 
   String getConfigValue(const String &key, const String &fallback)
   {
-    if (!ready)
+    if (!isReady())
       return fallback;
 
-    File file = SD.open(configPath, FILE_READ);
+    File file = fsRef().open(configPath, FILE_READ);
 
     if (!file)
       return fallback;
@@ -215,6 +285,12 @@ namespace sd_card
     if (mode != "OUT")
       mode = "IN";
 
+    String type = workspaceType;
+    type.toLowerCase();
+
+    if (type != "workspace")
+      type = "school";
+
     String ssid = apSsid;
     ssid.trim();
 
@@ -230,7 +306,7 @@ namespace sd_card
     String content;
     content += "system_name=" + cleanConfigField(systemName) + "\n";
     content += "workspace_name=" + cleanConfigField(workspaceName) + "\n";
-    content += "workspace_type=" + cleanConfigField(workspaceType) + "\n";
+    content += "workspace_type=" + type + "\n";
     content += "ap_ssid=" + ssid + "\n";
     content += "ap_password=" + pass + "\n";
     content += "default_mode=" + mode + "\n";
@@ -240,10 +316,10 @@ namespace sd_card
 
   uint32_t countDataLines(const String &path)
   {
-    if (!ready)
+    if (!isReady())
       return 0;
 
-    File file = SD.open(path, FILE_READ);
+    File file = fsRef().open(path, FILE_READ);
 
     if (!file)
       return 0;
@@ -280,7 +356,7 @@ namespace sd_card
 
   uint16_t getUserFingerId(const String &userId)
   {
-    if (!ready)
+    if (!isReady())
       return 0;
 
     String cleanId = userId;
@@ -289,7 +365,7 @@ namespace sd_card
     if (cleanId.length() == 0)
       return 0;
 
-    File file = SD.open(usersPath, FILE_READ);
+    File file = fsRef().open(usersPath, FILE_READ);
 
     if (!file)
       return 0;
@@ -322,7 +398,7 @@ namespace sd_card
 
   bool deleteUser(const String &userId)
   {
-    if (!ready)
+    if (!isReady())
       return false;
 
     String cleanId = userId;
@@ -331,18 +407,18 @@ namespace sd_card
     if (cleanId.length() == 0)
       return false;
 
-    if (!SD.exists(usersPath))
+    if (!fsRef().exists(usersPath))
       return false;
 
-    File source = SD.open(usersPath, FILE_READ);
+    File source = fsRef().open(usersPath, FILE_READ);
 
     if (!source)
       return false;
 
-    if (SD.exists("/users_tmp.csv"))
-      SD.remove("/users_tmp.csv");
+    if (fsRef().exists("/users_tmp.csv"))
+      fsRef().remove("/users_tmp.csv");
 
-    File temp = SD.open("/users_tmp.csv", FILE_WRITE);
+    File temp = fsRef().open("/users_tmp.csv", FILE_WRITE);
 
     if (!temp)
     {
@@ -382,13 +458,13 @@ namespace sd_card
 
     if (!deleted)
     {
-      SD.remove("/users_tmp.csv");
+      fsRef().remove("/users_tmp.csv");
       return false;
     }
 
-    SD.remove(usersPath);
+    fsRef().remove(usersPath);
 
-    if (!SD.rename("/users_tmp.csv", usersPath))
+    if (!fsRef().rename("/users_tmp.csv", usersPath))
       return false;
 
     return true;
@@ -396,17 +472,23 @@ namespace sd_card
 
   uint64_t totalBytes()
   {
-    if (!ready)
-      return 0;
+    if (isSdCardReady())
+      return SD.totalBytes();
 
-    return SD.totalBytes();
+    if (isInternalReady())
+      return LittleFS.totalBytes();
+
+    return 0;
   }
 
   uint64_t usedBytes()
   {
-    if (!ready)
-      return 0;
+    if (isSdCardReady())
+      return SD.usedBytes();
 
-    return SD.usedBytes();
+    if (isInternalReady())
+      return LittleFS.usedBytes();
+
+    return 0;
   }
 }

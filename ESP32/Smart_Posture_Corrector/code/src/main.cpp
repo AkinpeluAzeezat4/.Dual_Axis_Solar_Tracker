@@ -88,8 +88,10 @@ void loop()
     Serial.print(battery_level::getVoltage(), 2);
     Serial.print("V ");
     Serial.print(battery_level::getPercentage());
-    Serial.print("% | SD:");
-    Serial.print(sd_card::isReady() ? "OK" : "NO");
+    Serial.print(" | STORAGE:");
+    Serial.print(sd_card::getStorageName());
+    Serial.print(" | SD:");
+    Serial.print(sd_card::isSdReady() ? "OK" : "NO");
     Serial.print(" | MUTE:");
     Serial.print(posture_logic::isMuted() ? "YES" : "NO");
     Serial.print(" | IP:");

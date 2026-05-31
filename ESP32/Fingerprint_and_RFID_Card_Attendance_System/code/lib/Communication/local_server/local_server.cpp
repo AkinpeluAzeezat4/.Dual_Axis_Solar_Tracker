@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WebServer.h>
-#include <SD.h>
+#include <FS.h>
 #include "local_server.h"
 #include "attendance_manager/attendance_manager.h"
 #include "sd_card/sd_card.h"
@@ -84,8 +84,8 @@ namespace local_server
     html += "<b>Mode:</b> " + htmlEscape(attendance_manager::getModeText()) + "<br>";
     html += "<b>Users:</b> " + String(attendance_manager::getUserCount()) + "<br>";
     html += "<b>Records:</b> " + String(attendance_manager::getAttendanceCount()) + "<br>";
-    html += "<b>SD Card:</b> ";
-    html += sd_card::isReady() ? "Ready" : "Not Ready";
+    html += "<b>Storage:</b> ";
+    html += sd_card::isReady() ? sd_card::getStorageName() : "Not Ready";
     html += "<br>";
     html += "<b>Last event:</b> " + htmlEscape(attendance_manager::getLastMessage());
     html += "</div>";
@@ -118,7 +118,7 @@ namespace local_server
     html += "<input name='id' placeholder='User ID e.g. STU001' required>";
     html += "<button class='danger' type='submit'>Delete User</button>";
     html += "</form>";
-    html += "<p class='muted'>This removes the user from SD card, unlinks the RFID card, and deletes the fingerprint template.</p>";
+    html += "<p class='muted'>This removes the user from storage, unlinks the RFID card, and deletes the fingerprint template.</p>";
     html += "</div>";
 
     html += "<div class='card'><h3>Downloads</h3>";
@@ -173,7 +173,7 @@ namespace local_server
     String html = pageHead("Users");
 
     if (!sd_card::isReady())
-      html += "<div class='card'>SD card not ready.</div>";
+      html += "<div class='card'>Storage not ready.</div>";
     else
       html += "<pre>" + htmlEscape(sd_card::readFile("/users.csv", 22000)) + "</pre>";
 
@@ -224,7 +224,7 @@ namespace local_server
     String html = pageHead("Attendance Log");
 
     if (!sd_card::isReady())
-      html += "<div class='card'>SD card not ready.</div>";
+      html += "<div class='card'>Storage not ready.</div>";
     else
       html += "<pre>" + htmlEscape(sd_card::readFile("/attendance.csv", 30000)) + "</pre>";
 
@@ -322,13 +322,13 @@ namespace local_server
       return;
     }
 
-    if (!sd_card::isReady() || !SD.exists(path))
+    if (!sd_card::isReady() || !sd_card::exists(path))
     {
       server.send(404, "text/plain", "File not found");
       return;
     }
 
-    File file = SD.open(path, FILE_READ);
+    File file = sd_card::openRead(path);
 
     if (!file)
     {
@@ -357,9 +357,10 @@ namespace local_server
     json += "\"mode\":\"" + jsonEscape(attendance_manager::getModeText()) + "\",";
     json += "\"users\":" + String(attendance_manager::getUserCount()) + ",";
     json += "\"attendance_records\":" + String(attendance_manager::getAttendanceCount()) + ",";
-    json += "\"sd_ready\":";
+    json += "\"storage_ready\":";
     json += sd_card::isReady() ? "true" : "false";
     json += ",";
+    json += "\"storage\":\"" + jsonEscape(sd_card::getStorageName()) + "\",";
     json += "\"last_message\":\"" + jsonEscape(attendance_manager::getLastMessage()) + "\"";
     json += "}";
 

@@ -22,10 +22,14 @@ namespace posture_logic
   bool isMuted();
 
   State getState();
+
   float getBaselinePitch();
   float getPitchError();
+  float getCurrentPitch();
+  float getIdealReferenceAngle();
 
   bool hasSavedCalibration();
+  bool isCalibrationValid();
 
   const char *getStateText();
 }

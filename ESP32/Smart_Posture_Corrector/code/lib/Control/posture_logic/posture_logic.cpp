@@ -16,11 +16,13 @@ namespace posture_logic
   static bool muted = false;
   static bool calibrating = false;
   static bool savedCalibration = false;
+  static bool calibrationValid = false;
 
   static unsigned long calibrationStart = 0;
   static unsigned long badPostureStart = 0;
 
-  static float baselinePitch = 0.0f;
+  static float baselinePitch = 90.0f;
+  static float currentPitch = 0.0f;
   static float pitchError = 0.0f;
   static float calibrationSum = 0.0f;
 
@@ -28,6 +30,9 @@ namespace posture_logic
 
   static const unsigned long calibrationTime = 2000;
   static const unsigned long alertDelay = 3000;
+
+  static const float idealReferenceAngle = 90.0f;
+  static const float calibrationTolerance = 20.0f;
 
   static const float badAngleThreshold = 15.0f;
   static const float goodAngleThreshold = 8.0f;
@@ -42,6 +47,8 @@ namespace posture_logic
   {
     prefs.putFloat("baseline", baselinePitch);
     prefs.putBool("saved", true);
+    prefs.putBool("valid", calibrationValid);
+
     savedCalibration = true;
   }
 
@@ -51,12 +58,15 @@ namespace posture_logic
 
     if (savedCalibration)
     {
-      baselinePitch = prefs.getFloat("baseline", 0.0f);
+      baselinePitch = prefs.getFloat("baseline", idealReferenceAngle);
+      calibrationValid = prefs.getBool("valid", true);
       calibrating = false;
       state = GOOD_POSTURE;
       return true;
     }
 
+    baselinePitch = idealReferenceAngle;
+    calibrationValid = false;
     return false;
   }
 
@@ -96,30 +106,46 @@ namespace posture_logic
     }
 
     mpu6050_sensor::SensorData data = mpu6050_sensor::getData();
+    currentPitch = data.pitch;
+
     unsigned long now = millis();
 
     if (calibrating)
     {
       state = CALIBRATING;
-      calibrationSum += data.pitch;
+
+      calibrationSum += currentPitch;
       calibrationCount++;
 
       if (now - calibrationStart >= calibrationTime && calibrationCount > 0)
       {
         baselinePitch = calibrationSum / calibrationCount;
+
+        float referenceError = fabsf(baselinePitch - idealReferenceAngle);
+        calibrationValid = referenceError <= calibrationTolerance;
+
         saveCalibration();
 
         calibrating = false;
         state = GOOD_POSTURE;
+        pitchError = 0.0f;
 
         vibration_motor::pulse(300);
-        buzzer::beep(120);
+
+        if (calibrationValid)
+        {
+          buzzer::beep(120);
+        }
+        else
+        {
+          buzzer::beep(500);
+        }
       }
 
       return;
     }
 
-    pitchError = data.pitch - baselinePitch;
+    pitchError = currentPitch - baselinePitch;
     float absError = fabsf(pitchError);
 
     if (absError >= badAngleThreshold)
@@ -167,7 +193,12 @@ namespace posture_logic
   {
     prefs.remove("baseline");
     prefs.putBool("saved", false);
+    prefs.putBool("valid", false);
+
     savedCalibration = false;
+    calibrationValid = false;
+    baselinePitch = idealReferenceAngle;
+
     startCalibration();
   }
 
@@ -201,9 +232,24 @@ namespace posture_logic
     return pitchError;
   }
 
+  float getCurrentPitch()
+  {
+    return currentPitch;
+  }
+
+  float getIdealReferenceAngle()
+  {
+    return idealReferenceAngle;
+  }
+
   bool hasSavedCalibration()
   {
     return savedCalibration;
+  }
+
+  bool isCalibrationValid()
+  {
+    return calibrationValid;
   }
 
   const char *getStateText()
@@ -212,14 +258,19 @@ namespace posture_logic
     {
     case CALIBRATING:
       return "CALIBRATING";
+
     case GOOD_POSTURE:
       return "GOOD";
+
     case BAD_POSTURE:
       return "BAD";
+
     case ALERTING:
       return "ALERT";
+
     case SENSOR_ERROR:
       return "SENSOR_ERROR";
+
     default:
       return "UNKNOWN";
     }

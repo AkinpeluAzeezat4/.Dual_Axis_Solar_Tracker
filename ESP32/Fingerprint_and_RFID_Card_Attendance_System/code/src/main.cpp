@@ -50,7 +50,8 @@ void setup()
   local_server::begin();
   keyboard_input::begin();
 
-  oled_screen::show("System Ready", "Tap card first", "Then fingerprint", "Web: " + wifi_manager::getIpString());
+  // oled_screen::show("System Ready", "Tap card first", "Then fingerprint", "Web: " + wifi_manager::getIpString());
+  oled_screen::showReady(wifi_manager::getIpString());
 
   Serial.println();
   Serial.println("Fingerprint RFID Attendance System Prototype");

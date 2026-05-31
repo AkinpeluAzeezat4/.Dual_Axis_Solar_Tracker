@@ -13,33 +13,36 @@ namespace robot_control
   static AutoState autoState = DRIVE_FRONT;
 
   static const uint8_t SERVO_CENTER = 90;
-  static const uint8_t SERVO_LEFT = 150;
-  static const uint8_t SERVO_RIGHT = 30;
+  static const uint8_t SERVO_RIGHT = 0;
+  static const uint8_t SERVO_LEFT = 180;
 
-  static const float emergencyDistanceCm = 12.0f;
-  static const float turnDecisionDistanceCm = 35.0f;
-  static const float slowDistanceCm = 100.0f;
-  static const float clearDistanceCm = 45.0f;
+  static const float reverseDistanceCm = 8.0f;
+  static const float scanDistanceCm = 15.0f;
+  static const float slowDistanceCm = 35.0f;
   static const float invalidDistanceCm = 900.0f;
 
-  static const int16_t crawlSpeed = 110;
-  static const int16_t minDriveSpeed = 150;
-  static const int16_t maxDriveSpeed = 430;
+  static const int16_t reverseSpeed = 75;
+  static const int16_t minDriveSpeed = 60;
+  static const int16_t maxDriveSpeed = 300;
 
-  static const int16_t turnInnerSpeed = 90;
-  static const int16_t turnMinOuterSpeed = 190;
-  static const int16_t turnMaxOuterSpeed = 390;
+  static const int16_t turnMinSpeed = 120;
+  static const int16_t turnMaxSpeed = 230;
 
-  static const float turnAngleDeg = 60.0f;
+  static const float turnAngleDeg = 35.0f;
 
-  static const unsigned long scanPrepareTime = 150;
-  static const unsigned long servoSettleTime = 420;
-  static const unsigned long centerSettleTime = 180;
-  static const unsigned long maxTurnTime = 1500;
+  static const unsigned long stopBeforeScanTime = 250;
+  static const unsigned long reverseTime = 800;
+  static const unsigned long servoSettleTime = 500;
+  static const unsigned long sampleInterval = 60;
+  static const unsigned long centerSettleTime = 250;
+  static const unsigned long maxTurnTime = 1050;
+
+  static const uint8_t sampleTarget = 4;
 
   static unsigned long stateStart = 0;
   static unsigned long lastDriveUpdate = 0;
   static unsigned long lastTurnUpdate = 0;
+  static unsigned long lastSampleTime = 0;
 
   static int16_t manualLeft = 0;
   static int16_t manualRight = 0;
@@ -53,8 +56,13 @@ namespace robot_control
   static float leftDistance = 999.0f;
   static float rightDistance = 999.0f;
 
+  static float sampleSum = 0.0f;
+  static uint8_t sampleCount = 0;
+  static uint8_t sampleAttempts = 0;
+
   static float speedErrorLast = 0.0f;
   static float speedErrorIntegral = 0.0f;
+
   static float distancePidOutput = 0.0f;
   static float turnPidOutput = 0.0f;
 
@@ -94,6 +102,47 @@ namespace robot_control
     stateStart = millis();
   }
 
+  static void resetSample()
+  {
+    sampleSum = 0.0f;
+    sampleCount = 0;
+    sampleAttempts = 0;
+    lastSampleTime = 0;
+  }
+
+  static bool collectDistanceSample(float &result)
+  {
+    if (millis() - lastSampleTime < sampleInterval)
+      return false;
+
+    lastSampleTime = millis();
+    sampleAttempts++;
+
+    float distance = ultrasonic::getDistanceCm();
+
+    if (validDistance(distance))
+    {
+      sampleSum += distance;
+      sampleCount++;
+    }
+
+    if (sampleAttempts >= sampleTarget)
+    {
+      if (sampleCount > 0)
+      {
+        result = sampleSum / sampleCount;
+      }
+      else
+      {
+        result = 999.0f;
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
   static void driveTank(int16_t left, int16_t right)
   {
     targetLeftSpeed = clampMotor(left);
@@ -102,16 +151,11 @@ namespace robot_control
     currentLeftSpeed = targetLeftSpeed;
     currentRightSpeed = targetRightSpeed;
 
-    yahboom_motor::setPWM(
+    yahboom_motor::setSpeed(
         currentLeftSpeed,
         currentLeftSpeed,
         currentRightSpeed,
         currentRightSpeed);
-  }
-
-  static void crawlForward()
-  {
-    driveTank(crawlSpeed, crawlSpeed);
   }
 
   static void stopMotor()
@@ -138,9 +182,9 @@ namespace robot_control
   static int16_t calculateApproachSpeed(float distance)
   {
     if (!validDistance(distance))
-      return crawlSpeed;
-    if (distance <= turnDecisionDistanceCm)
-      return crawlSpeed;
+      return minDriveSpeed;
+    if (distance <= scanDistanceCm)
+      return 0;
     if (distance >= slowDistanceCm)
       return maxDriveSpeed;
 
@@ -156,17 +200,17 @@ namespace robot_control
 
     lastDriveUpdate = now;
 
-    float error = distance - turnDecisionDistanceCm;
+    float error = distance - scanDistanceCm;
 
     speedErrorIntegral += error * dt;
-    speedErrorIntegral = constrain(speedErrorIntegral, -80.0f, 80.0f);
+    speedErrorIntegral = constrain(speedErrorIntegral, -50.0f, 50.0f);
 
     float derivative = (error - speedErrorLast) / dt;
     speedErrorLast = error;
 
-    float kp = 6.0f;
-    float ki = 0.12f;
-    float kd = 0.35f;
+    float kp = 5.0f;
+    float ki = 0.08f;
+    float kd = 0.20f;
 
     float output = (kp * error) + (ki * speedErrorIntegral) + (kd * derivative);
 
@@ -175,7 +219,7 @@ namespace robot_control
     return (int16_t)distancePidOutput;
   }
 
-  static void startArcTurn(int8_t direction)
+  static void startTurn(int8_t direction)
   {
     gyroscope::Data gyro = gyroscope::getData();
 
@@ -195,12 +239,13 @@ namespace robot_control
     turnError = 0.0f;
     turnErrorLast = 0.0f;
     turnErrorIntegral = 0.0f;
+    turnPidOutput = 0.0f;
     lastTurnUpdate = millis();
 
-    servo::setAngle(SERVO_CENTER);
+    servo::center();
   }
 
-  static bool updateArcTurn()
+  static bool updateTurn()
   {
     gyroscope::Data gyro = gyroscope::getData();
 
@@ -222,39 +267,37 @@ namespace robot_control
     lastTurnUpdate = now;
 
     turnErrorIntegral += turnError * dt;
-    turnErrorIntegral = constrain(turnErrorIntegral, -50.0f, 50.0f);
+    turnErrorIntegral = constrain(turnErrorIntegral, -35.0f, 35.0f);
 
     float derivative = (turnError - turnErrorLast) / dt;
     turnErrorLast = turnError;
 
-    float kp = 4.5f;
-    float ki = 0.02f;
+    float kp = 5.5f;
+    float ki = 0.01f;
     float kd = 0.25f;
 
     float output = (kp * turnError) + (ki * turnErrorIntegral) + (kd * derivative);
 
     turnPidOutput = output;
 
-    int16_t outerSpeed = (int16_t)constrain(fabsf(output), turnMinOuterSpeed, turnMaxOuterSpeed);
+    int16_t turnSpeed = (int16_t)constrain(fabsf(output), turnMinSpeed, turnMaxSpeed);
 
     if (turnDirection > 0)
     {
-      driveTank(outerSpeed, turnInnerSpeed);
+      driveTank(turnSpeed, -turnSpeed);
     }
     else
     {
-      driveTank(turnInnerSpeed, outerSpeed);
+      driveTank(-turnSpeed, turnSpeed);
     }
 
     if (fabsf(turnError) <= 5.0f)
     {
-      driveTank(crawlSpeed, crawlSpeed);
       return true;
     }
 
     if (millis() - stateStart >= maxTurnTime)
     {
-      driveTank(crawlSpeed, crawlSpeed);
       return true;
     }
 
@@ -266,33 +309,27 @@ namespace robot_control
     if (!batteryIsSafe())
     {
       stopMotor();
-      servo::setAngle(SERVO_CENTER);
-      return;
-    }
-
-    frontDistance = ultrasonic::getDistanceCm();
-
-    if (validDistance(frontDistance) && frontDistance <= emergencyDistanceCm)
-    {
-      stopMotor();
-      servo::setAngle(SERVO_CENTER);
+      servo::center();
       return;
     }
 
     if (autoState == DRIVE_FRONT)
     {
-      servo::setAngle(SERVO_CENTER);
+      servo::center();
 
-      if (!validDistance(frontDistance))
+      frontDistance = ultrasonic::getDistanceCm();
+
+      if (validDistance(frontDistance) && frontDistance <= reverseDistanceCm)
       {
-        crawlForward();
+        stopMotor();
+        changeState(REVERSE_BACK);
         return;
       }
 
-      if (frontDistance <= turnDecisionDistanceCm)
+      if (validDistance(frontDistance) && frontDistance <= scanDistanceCm)
       {
-        crawlForward();
-        changeState(PREPARE_SCAN);
+        stopMotor();
+        changeState(STOP_FOR_DECISION);
         return;
       }
 
@@ -301,48 +338,29 @@ namespace robot_control
       return;
     }
 
-    if (autoState == PREPARE_SCAN)
+    if (autoState == REVERSE_BACK)
     {
-      crawlForward();
-      servo::setAngle(SERVO_CENTER);
+      servo::center();
+      driveTank(-reverseSpeed, -reverseSpeed);
 
-      if (millis() - stateStart >= scanPrepareTime)
+      if (millis() - stateStart >= reverseTime)
       {
-        servo::setAngle(SERVO_LEFT);
-        changeState(LOOK_LEFT);
+        stopMotor();
+        changeState(STOP_FOR_DECISION);
       }
 
       return;
     }
 
-    if (autoState == LOOK_LEFT)
+    if (autoState == STOP_FOR_DECISION)
     {
-      crawlForward();
+      stopMotor();
+      servo::center();
 
-      if (millis() - stateStart >= servoSettleTime)
-      {
-        leftDistance = ultrasonic::getDistanceCm();
-        changeState(READ_LEFT);
-      }
-
-      return;
-    }
-
-    if (autoState == READ_LEFT)
-    {
-      crawlForward();
-      servo::setAngle(SERVO_CENTER);
-      changeState(RETURN_CENTER_AFTER_LEFT);
-      return;
-    }
-
-    if (autoState == RETURN_CENTER_AFTER_LEFT)
-    {
-      crawlForward();
-
-      if (millis() - stateStart >= centerSettleTime)
+      if (millis() - stateStart >= stopBeforeScanTime)
       {
         servo::setAngle(SERVO_RIGHT);
+        resetSample();
         changeState(LOOK_RIGHT);
       }
 
@@ -351,28 +369,65 @@ namespace robot_control
 
     if (autoState == LOOK_RIGHT)
     {
-      crawlForward();
+      stopMotor();
+      servo::setAngle(SERVO_RIGHT);
 
       if (millis() - stateStart >= servoSettleTime)
       {
-        rightDistance = ultrasonic::getDistanceCm();
-        changeState(READ_RIGHT);
+        resetSample();
+        changeState(SAMPLE_RIGHT);
       }
 
       return;
     }
 
-    if (autoState == READ_RIGHT)
+    if (autoState == SAMPLE_RIGHT)
     {
-      crawlForward();
-      servo::setAngle(SERVO_CENTER);
-      changeState(RETURN_CENTER_AFTER_RIGHT);
+      stopMotor();
+      servo::setAngle(SERVO_RIGHT);
+
+      if (collectDistanceSample(rightDistance))
+      {
+        servo::setAngle(SERVO_LEFT);
+        resetSample();
+        changeState(LOOK_LEFT);
+      }
+
       return;
     }
 
-    if (autoState == RETURN_CENTER_AFTER_RIGHT)
+    if (autoState == LOOK_LEFT)
     {
-      crawlForward();
+      stopMotor();
+      servo::setAngle(SERVO_LEFT);
+
+      if (millis() - stateStart >= servoSettleTime)
+      {
+        resetSample();
+        changeState(SAMPLE_LEFT);
+      }
+
+      return;
+    }
+
+    if (autoState == SAMPLE_LEFT)
+    {
+      stopMotor();
+      servo::setAngle(SERVO_LEFT);
+
+      if (collectDistanceSample(leftDistance))
+      {
+        servo::center();
+        changeState(RETURN_CENTER);
+      }
+
+      return;
+    }
+
+    if (autoState == RETURN_CENTER)
+    {
+      stopMotor();
+      servo::center();
 
       if (millis() - stateStart >= centerSettleTime)
       {
@@ -384,40 +439,28 @@ namespace robot_control
 
     if (autoState == DECIDE_TURN)
     {
-      crawlForward();
-      servo::setAngle(SERVO_CENTER);
+      stopMotor();
+      servo::center();
 
-      bool leftClear = validDistance(leftDistance) && leftDistance >= clearDistanceCm;
-      bool rightClear = validDistance(rightDistance) && rightDistance >= clearDistanceCm;
-
-      if (rightClear && rightDistance >= leftDistance)
+      if (rightDistance >= leftDistance)
       {
-        startArcTurn(1);
+        startTurn(1);
         return;
       }
 
-      if (leftClear)
-      {
-        startArcTurn(-1);
-        return;
-      }
-
-      if (rightClear)
-      {
-        startArcTurn(1);
-        return;
-      }
-
-      startArcTurn(1);
+      startTurn(-1);
       return;
     }
 
     if (autoState == TURN_RIGHT || autoState == TURN_LEFT)
     {
-      servo::setAngle(SERVO_CENTER);
+      servo::center();
 
-      if (updateArcTurn())
+      if (updateTurn())
       {
+        stopMotor();
+        distancePidOutput = 0.0f;
+        turnPidOutput = 0.0f;
         speedErrorIntegral = 0.0f;
         speedErrorLast = 0.0f;
         changeState(DRIVE_FRONT);
@@ -444,8 +487,15 @@ namespace robot_control
     leftDistance = 999.0f;
     rightDistance = 999.0f;
 
+    sampleSum = 0.0f;
+    sampleCount = 0;
+    sampleAttempts = 0;
+
     speedErrorLast = 0.0f;
     speedErrorIntegral = 0.0f;
+
+    distancePidOutput = 0.0f;
+    turnPidOutput = 0.0f;
 
     turnTargetYaw = 0.0f;
     turnDirection = 1;
@@ -453,7 +503,7 @@ namespace robot_control
     turnErrorLast = 0.0f;
     turnErrorIntegral = 0.0f;
 
-    servo::setAngle(SERVO_CENTER);
+    servo::center();
     stopMotor();
 
     stateStart = millis();
@@ -464,13 +514,13 @@ namespace robot_control
     if (currentMode == IDLE)
     {
       stopMotor();
-      servo::setAngle(SERVO_CENTER);
+      servo::center();
       return;
     }
 
     if (currentMode == MANUAL)
     {
-      servo::setAngle(SERVO_CENTER);
+      servo::center();
       driveTank(manualLeft, manualRight);
       return;
     }
@@ -490,9 +540,11 @@ namespace robot_control
     if (mode == AUTO_AVOIDANCE)
     {
       autoState = DRIVE_FRONT;
-      servo::setAngle(SERVO_CENTER);
+      servo::center();
       speedErrorIntegral = 0.0f;
       speedErrorLast = 0.0f;
+      distancePidOutput = 0.0f;
+      turnPidOutput = 0.0f;
     }
   }
 
@@ -507,7 +559,7 @@ namespace robot_control
   {
     currentMode = IDLE;
     stopMotor();
-    servo::setAngle(SERVO_CENTER);
+    servo::center();
   }
 
   Mode getMode()
@@ -546,6 +598,7 @@ namespace robot_control
     status.turnPidOutput = turnPidOutput;
 
     status.servoAngle = servo::getAngle();
+
     return status;
   }
 

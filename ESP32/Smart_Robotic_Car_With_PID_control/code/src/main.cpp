@@ -5,7 +5,6 @@
 #include "servo/servo.h"
 #include "battery_level/battery_level.h"
 #include "yahboom_motor/yahboom_motor.h"
-#include "wifi_manager/wifi_manager.h"
 #include "web_dashboard/web_dashboard.h"
 #include "led_indicator/led_indicator.h"
 #include "robot_control/robot_control.h"
@@ -29,15 +28,8 @@ void setup()
   sleep_wake::begin();
   error_handling::begin();
   reset::begin();
-  wifi_manager::begin();
   web_dashboard::begin();
   robot_control::begin();
-
-  Serial.println("Smart Robotic Car non-blocking integration started");
-  Serial.print("WiFi SSID: ");
-  Serial.println(wifi_manager::getSSID());
-  Serial.print("Web IP: ");
-  Serial.println(wifi_manager::getIP());
 }
 
 void loop()
@@ -51,7 +43,6 @@ void loop()
   servo::update();
   yahboom_motor::update();
   robot_control::update();
-  wifi_manager::update();
   web_dashboard::update();
   sleep_wake::update();
   error_handling::update();
@@ -62,20 +53,5 @@ void loop()
     lastSerialPrint = millis();
     robot_control::Status status = robot_control::getStatus();
     gyroscope::Data gyro = gyroscope::getData();
-
-    Serial.print("Distance: ");
-    Serial.print(status.frontDistance, 1);
-    Serial.print(" cm | L: ");
-    Serial.print(status.currentLeftSpeed);
-    Serial.print(" R: ");
-    Serial.print(status.currentRightSpeed);
-    Serial.print(" | Battery: ");
-    Serial.print(battery_level::getPercentage());
-    Serial.print("% ");
-    Serial.print(battery_level::getVoltage(), 2);
-    Serial.print("V | Yaw: ");
-    Serial.print(gyro.yaw, 1);
-    Serial.print(" | Motor Config: ");
-    Serial.println(yahboom_motor::isConfigured() ? "YES" : "NO");
   }
 }

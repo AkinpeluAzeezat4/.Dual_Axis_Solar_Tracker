@@ -1,7 +1,7 @@
 #ifndef SERVO_H
 #define SERVO_H
 
-#include <stdint.h>
+#include <Arduino.h>
 
 namespace servo
 {
@@ -11,8 +11,6 @@ namespace servo
     void setAngle(uint8_t angle);
     void center();
     uint8_t getAngle();
-    uint8_t getTargetAngle();
-    bool isAtTarget();
 }
 
 #endif

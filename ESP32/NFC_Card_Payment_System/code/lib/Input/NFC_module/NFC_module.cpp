@@ -1,42 +1,80 @@
 #include <Arduino.h>
 #include <SPI.h>
-#include <MFRC522.h>
+#include <Adafruit_PN532.h>
 #include "NFC_module.h"
 
 namespace
 {
-  MFRC522 *reader = nullptr;
+  Adafruit_PN532 *reader = nullptr;
+
   bool ready = false;
+  uint32_t versionData = 0;
+
+  uint8_t nfcSsPin = 255;
+  uint8_t nfcRstPin = 255;
+  uint8_t spiMosiPin = 255;
+  uint8_t spiMisoPin = 255;
+  uint8_t spiSckPin = 255;
 
   String pendingUID;
   String lastUID;
+
   unsigned long lastReadAt = 0;
+  unsigned long lastRetryAt = 0;
+
   const unsigned long duplicateGuardMs = 1200;
+  const unsigned long retryIntervalMs = 3000;
 
-  String formatUID(MFRC522 *device)
+  void hardwareReset()
   {
-    String uid;
-
-    for (byte i = 0; i < device->uid.size; ++i)
+    if (nfcRstPin == 255)
     {
-      if (device->uid.uidByte[i] < 0x10)
-      {
-        uid += "0";
-      }
-
-      uid += String(device->uid.uidByte[i], HEX);
+      return;
     }
 
-    uid.toUpperCase();
-    return uid;
+    pinMode(nfcRstPin, OUTPUT);
+    digitalWrite(nfcRstPin, HIGH);
+    delay(20);
+    digitalWrite(nfcRstPin, LOW);
+    delay(150);
+    digitalWrite(nfcRstPin, HIGH);
+    delay(700);
   }
-}
 
-namespace NFC_module
-{
-  void begin(uint8_t ssPin, uint8_t rstPin, uint8_t mosiPin, uint8_t misoPin, uint8_t sckPin)
+  String formatUID(uint8_t *uid, uint8_t uidLength)
   {
-    SPI.begin(sckPin, misoPin, mosiPin, ssPin);
+    String text;
+
+    for (uint8_t i = 0; i < uidLength; i++)
+    {
+      if (uid[i] < 0x10)
+      {
+        text += "0";
+      }
+
+      text += String(uid[i], HEX);
+    }
+
+    text.toUpperCase();
+    return text;
+  }
+
+  void initReader()
+  {
+    ready = false;
+    versionData = 0;
+
+    if (nfcSsPin == 255)
+    {
+      return;
+    }
+
+    pinMode(nfcSsPin, OUTPUT);
+    digitalWrite(nfcSsPin, HIGH);
+
+    SPI.begin(spiSckPin, spiMisoPin, spiMosiPin, nfcSsPin);
+
+    hardwareReset();
 
     if (reader != nullptr)
     {
@@ -44,46 +82,75 @@ namespace NFC_module
       reader = nullptr;
     }
 
-    reader = new MFRC522(ssPin, rstPin);
-    reader->PCD_Init();
-    delay(20);
+    reader = new Adafruit_PN532(nfcSsPin, &SPI);
+    reader->begin();
 
-    byte version = reader->PCD_ReadRegister(MFRC522::VersionReg);
-    ready = (version != 0x00 && version != 0xFF);
+    delay(100);
+
+    versionData = reader->getFirmwareVersion();
+
+    if (versionData != 0)
+    {
+      reader->SAMConfig();
+      ready = true;
+    }
+  }
+}
+
+namespace NFC_module
+{
+  void begin(uint8_t ssPin, uint8_t rstPin, uint8_t mosiPin, uint8_t misoPin, uint8_t sckPin)
+  {
+    nfcSsPin = ssPin;
+    nfcRstPin = rstPin;
+    spiMosiPin = mosiPin;
+    spiMisoPin = misoPin;
+    spiSckPin = sckPin;
 
     pendingUID = "";
     lastUID = "";
     lastReadAt = 0;
+    lastRetryAt = 0;
+
+    initReader();
+  }
+
+  void retryInit()
+  {
+    initReader();
   }
 
   void update()
   {
     if (!ready || reader == nullptr)
     {
+      if (millis() - lastRetryAt >= retryIntervalMs)
+      {
+        lastRetryAt = millis();
+        initReader();
+      }
+
       return;
     }
 
-    if (!reader->PICC_IsNewCardPresent())
+    uint8_t uid[7];
+    uint8_t uidLength = 0;
+
+    bool success = reader->readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength, 50);
+
+    if (!success)
     {
       return;
     }
 
-    if (!reader->PICC_ReadCardSerial())
-    {
-      return;
-    }
+    String uidText = formatUID(uid, uidLength);
 
-    String uid = formatUID(reader);
-
-    if (uid != lastUID || (millis() - lastReadAt) > duplicateGuardMs)
+    if (uidText != lastUID || millis() - lastReadAt >= duplicateGuardMs)
     {
-      pendingUID = uid;
-      lastUID = uid;
+      pendingUID = uidText;
+      lastUID = uidText;
       lastReadAt = millis();
     }
-
-    reader->PICC_HaltA();
-    reader->PCD_StopCrypto1();
   }
 
   bool isReady()
@@ -106,5 +173,32 @@ namespace NFC_module
   String getLastUID()
   {
     return lastUID;
+  }
+
+  uint32_t getVersion()
+  {
+    return versionData;
+  }
+
+  String getVersionText()
+  {
+    if (!ready || versionData == 0)
+    {
+      return "PN532 not found";
+    }
+
+    uint8_t ic = (versionData >> 24) & 0xFF;
+    uint8_t ver = (versionData >> 16) & 0xFF;
+    uint8_t rev = (versionData >> 8) & 0xFF;
+
+    String text = "IC:";
+    text += String(ic, HEX);
+    text += " V:";
+    text += String(ver);
+    text += ".";
+    text += String(rev);
+
+    text.toUpperCase();
+    return text;
   }
 }

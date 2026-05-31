@@ -2,6 +2,7 @@
 #define SD_CARD_H
 
 #include <Arduino.h>
+#include <FS.h>
 
 namespace sd_card
 {
@@ -9,10 +10,15 @@ namespace sd_card
   void update();
 
   bool isReady();
+  bool isSdCardReady();
+  bool isInternalReady();
+  String getStorageName();
 
   bool appendLine(const String &path, const String &line);
   bool writeFile(const String &path, const String &content);
   bool ensureFile(const String &path, const String &header);
+  bool exists(const String &path);
+  File openRead(const String &path);
 
   String readFile(const String &path, size_t maxBytes);
   String getConfigValue(const String &key, const String &fallback);

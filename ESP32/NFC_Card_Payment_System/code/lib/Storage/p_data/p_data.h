@@ -26,6 +26,9 @@ namespace p_data
   bool topUpCard(const String &uid, long amount, long &newBalance);
   bool deductCard(const String &uid, long amount, CardRecord &updatedRecord);
 
+  bool deleteCard(const String &uid);
+  bool clearAllCards();
+
   size_t countCards();
   String exportCardsCsv();
 }

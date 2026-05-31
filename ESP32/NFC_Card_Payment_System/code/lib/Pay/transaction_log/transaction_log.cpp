@@ -6,6 +6,16 @@
 namespace
 {
   const char *logPath = "/logs/transactions.csv";
+
+  String csvSafe(const String &input)
+  {
+    String text = input;
+    text.replace(",", " ");
+    text.replace("\n", " ");
+    text.replace("\r", " ");
+    text.trim();
+    return text;
+  }
 }
 
 namespace transaction_log
@@ -31,12 +41,12 @@ namespace transaction_log
     }
 
     String line =
-        rtc::getTimestamp() + "," +
-        uid + "," +
-        name + "," +
+        csvSafe(rtc::getTimestamp()) + "," +
+        csvSafe(uid) + "," +
+        csvSafe(name) + "," +
         String(amount) + "," +
         String(balanceAfter) + "," +
-        status;
+        csvSafe(status);
 
     return sd_card::appendLine(logPath, line);
   }

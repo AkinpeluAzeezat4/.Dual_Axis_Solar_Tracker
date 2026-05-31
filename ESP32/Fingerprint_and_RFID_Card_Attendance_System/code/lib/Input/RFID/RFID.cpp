@@ -2,7 +2,7 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include "RFID.h"
-#include "Pins/Pins.h"
+#include "Pins.h"
 
 namespace RFID
 {

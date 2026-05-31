@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <SD.h>
+#include <FS.h>
 #include "attendance_manager.h"
 #include "RFID/RFID.h"
 #include "fingerprint/fingerprint.h"
@@ -135,7 +135,7 @@ namespace attendance_manager
     if (!sd_card::isReady())
       return false;
 
-    File file = SD.open("/users.csv", FILE_READ);
+    File file = sd_card::openRead("/users.csv");
 
     if (!file)
       return false;
@@ -164,7 +164,7 @@ namespace attendance_manager
     if (!sd_card::isReady())
       return false;
 
-    File file = SD.open("/users.csv", FILE_READ);
+    File file = sd_card::openRead("/users.csv");
 
     if (!file)
       return false;
@@ -194,7 +194,7 @@ namespace attendance_manager
     if (!sd_card::isReady())
       return 1;
 
-    File file = SD.open("/users.csv", FILE_READ);
+    File file = sd_card::openRead("/users.csv");
 
     if (!file)
       return 1;
@@ -275,8 +275,8 @@ namespace attendance_manager
     }
     else
     {
-      lastMessage = "SD log failed";
-      oled_screen::showError("SD log failed");
+      lastMessage = "Storage log failed";
+      oled_screen::showError("Storage failed");
       buzzer::errorBeep();
     }
   }
@@ -348,7 +348,7 @@ namespace attendance_manager
       {
         userCount++;
         lastMessage = pendingName + " registered";
-        oled_screen::show("User Registered", pendingName, "RFID + Fingerprint", "Saved to SD");
+        oled_screen::show("User Registered", pendingName, "RFID + Fingerprint", "Saved to storage");
         buzzer::doubleBeep();
       }
       else
@@ -508,7 +508,7 @@ namespace attendance_manager
 
     if (!sd_card::isReady())
     {
-      lastMessage = "SD card not ready";
+      lastMessage = "Storage not ready";
       return false;
     }
 
@@ -553,7 +553,7 @@ namespace attendance_manager
 
     if (!sd_card::isReady())
     {
-      lastMessage = "SD card not ready";
+      lastMessage = "Storage not ready";
       return false;
     }
 

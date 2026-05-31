@@ -10,10 +10,10 @@ namespace Pins
   const uint8_t EL_IN1 = 26;
   const uint8_t EL_IN2 = 27;
 
-  const uint8_t LDR_TOP_LEFT = 4;
-  const uint8_t LDR_TOP_RIGHT = 35;
+  const uint8_t LDR_TOP_LEFT = 35;
+  const uint8_t LDR_TOP_RIGHT = 34;
   const uint8_t LDR_BOTTOM_LEFT = 39;
-  const uint8_t LDR_BOTTOM_RIGHT = 34;
+  const uint8_t LDR_BOTTOM_RIGHT = 4;
   const uint8_t LDR_NIGHT = 36;
 
   const uint8_t ENC_CLK = 18;

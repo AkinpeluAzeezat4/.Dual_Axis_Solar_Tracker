@@ -23,8 +23,8 @@ namespace motor_driver
   const int pwmFreq = 18000;
   const int pwmResolution = 8;
 
-  const int minSpeed = 120;
-  const int maxSpeed = 230;
+  const int minSpeed = 250;
+  const int maxSpeed = 255;
   const unsigned long manualPulseTime = 250;
 
   int clampValue(int value, int low, int high)

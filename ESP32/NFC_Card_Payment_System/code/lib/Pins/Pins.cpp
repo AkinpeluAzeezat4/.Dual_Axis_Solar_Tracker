@@ -24,14 +24,24 @@ namespace Pins
   const uint8_t SD_CS_PIN = CS1_PIN;
   const uint8_t BUZZER_PIN = CS2_PIN;
 
-  const uint8_t BTN_UP_PIN = 2;
-  const uint8_t BTN_DOWN_PIN = 6;
-  const uint8_t BTN_LEFT_PIN = 7;
-  const uint8_t BTN_RIGHT_PIN = 16;
+  const uint8_t BTN_UP_PIN = 6;
+  const uint8_t BTN_DOWN_PIN = 2;
+  const uint8_t BTN_LEFT_PIN = 16;
+  const uint8_t BTN_RIGHT_PIN = 7;
   const uint8_t BTN_OK_PIN = 3;
 
   void begin()
   {
+    pinMode(CS1_PIN, OUTPUT);
+    pinMode(CS2_PIN, OUTPUT);
+    pinMode(CS3_PIN, OUTPUT);
+
+    digitalWrite(CS1_PIN, HIGH);
+    digitalWrite(CS2_PIN, HIGH);
+    digitalWrite(CS3_PIN, HIGH);
+
+    pinMode(NFC_RST_PIN, OUTPUT);
+    digitalWrite(NFC_RST_PIN, HIGH);
   }
 
   int readPin(uint8_t gpio)

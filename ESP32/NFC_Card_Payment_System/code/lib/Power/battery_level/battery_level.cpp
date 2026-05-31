@@ -5,7 +5,7 @@ namespace battery_level
 {
   static uint8_t batteryPin = 255;
   static float voltage = 0.0f;
-  static float scaleFactor = 4.615f;
+  static float scaleFactor = 3.8f;
 
   static unsigned long lastReadTime = 0;
   static const unsigned long readInterval = 500;

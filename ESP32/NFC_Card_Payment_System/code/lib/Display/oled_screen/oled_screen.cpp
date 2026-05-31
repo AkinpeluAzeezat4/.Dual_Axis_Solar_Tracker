@@ -27,7 +27,7 @@ namespace
 
   void drawNetworkIcon()
   {
-    uint8_t x = 102;
+    uint8_t x = 100;
     uint8_t y = 1;
     bool connected = wifi_service::isConnected();
 
@@ -41,7 +41,9 @@ namespace
     }
     else
     {
-      u8g2.drawLine(x + 0, y + 5, x + 10, y);
+      u8g2.drawBox(x + 6, y + 2, 2, 3);
+      u8g2.drawLine(x - 5, y + 1, x - 2, y + 4);
+      u8g2.drawLine(x - 2, y + 1, x - 5, y + 4);
     }
   }
 
@@ -155,7 +157,6 @@ namespace oled_screen
     if (strcmp(command, "welcome") == 0)
     {
       u8g2.setFont(u8g2_font_6x12_tf);
-      u8g2.drawFrame(0, 0, 128, 64);
       u8g2.drawStr(17, 20, "NFC Card Payment");
       u8g2.drawStr(47, 34, "System");
       u8g2.drawLine(12, 42, 116, 42);
@@ -183,18 +184,18 @@ namespace oled_screen
       u8g2.drawLine(0, 14, 127, 14);
 
       u8g2.setFont(u8g2_font_7x14B_tf);
-      u8g2.drawStr(10, 32, "SELECT AMOUNT");
+      u8g2.drawStr(18, 28, "SELECT AMOUNT");
 
       const char *text = (amount != nullptr) ? amount : "N0";
       uint8_t boxX = 29;
-      uint8_t boxY = 38;
+      uint8_t boxY = 32;
       uint8_t boxW = 70;
       uint8_t boxH = 20;
       uint8_t radius = 3;
 
       u8g2.drawRFrame(boxX, boxY, boxW, boxH, radius);
       int textX = boxX + (boxW - u8g2.getStrWidth(text)) / 2;
-      u8g2.drawStr(textX, 53, text);
+      u8g2.drawStr(textX, 47, text);
 
       u8g2.setFont(u8g2_font_5x8_tf);
       u8g2.drawStr(10, 63, "UP/DOWN: Amt   OK: Pay");

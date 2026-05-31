@@ -10,7 +10,7 @@ namespace web_dashboard
 {
   static WebServer server(80);
 
-  static const char *apSsid = "SmartCar_PID";
+  static const char *apSsid = "robot";
   static const char *apPassword = "12345678";
 
   static String ipAddress = "0.0.0.0";
@@ -144,7 +144,7 @@ body.light .btn.forward{background:linear-gradient(135deg,var(--green),#0f7b40)}
 <div class="card pid-card"><div class="label">Distance PID</div><div class="value"><span id="distancePid">0.0</span></div></div>
 <div class="card pid-card"><div class="label">Turn PID</div><div class="value"><span id="turnPid">0.0</span></div></div>
 </div>
-<div class="card speed-card"><div class="label">Manual Speed</div><div class="value"><span id="speedValue">320</span></div><input class="slider" id="speed" type="range" min="120" max="700" value="320" oninput="speedValue.textContent=this.value"></div>
+<div class="card speed-card"><div class="label">Manual Speed</div><div class="value"><span id="speedValue">120</span></div><input class="slider" id="speed" type="range" min="60" max="350" value="120" oninput="speedValue.textContent=this.value"></div>
 <div class="control-panel">
 <div class="control-title">Manual Navigation</div>
 <div class="drive-pad">
@@ -301,10 +301,8 @@ window.addEventListener('load',updateStatus);
     String command = server.arg("cmd");
     int speed = server.arg("speed").toInt();
 
-    if (speed < 120)
-      speed = 120;
-    if (speed > 700)
-      speed = 700;
+    if (speed < 60) speed = 60;
+    if (speed > 350) speed = 350;
 
     if (command == "auto")
     {
@@ -328,11 +326,11 @@ window.addEventListener('load',updateStatus);
     }
     else if (command == "left")
     {
-      robot_control::setManualSpeed(speed / 3, speed);
+      robot_control::setManualSpeed(-speed, speed);
     }
     else if (command == "right")
     {
-      robot_control::setManualSpeed(speed, speed / 3);
+      robot_control::setManualSpeed(speed, -speed);
     }
 
     addHeaders();

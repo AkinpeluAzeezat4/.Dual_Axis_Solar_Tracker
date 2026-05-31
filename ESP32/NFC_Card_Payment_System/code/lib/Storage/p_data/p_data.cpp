@@ -1,12 +1,10 @@
 #include <Arduino.h>
-#include <SD.h>
 #include "p_data.h"
 #include "sd_card/sd_card.h"
 
 namespace
 {
   const char *cardsPath = "/db/cards.csv";
-  const char *tempPath = "/db/cards.tmp";
 
   bool ready = false;
   String pendingUID;
@@ -15,6 +13,8 @@ namespace
   {
     String text = input;
     text.replace(",", " ");
+    text.replace("\n", " ");
+    text.replace("\r", " ");
     text.trim();
     return text;
   }
@@ -63,10 +63,28 @@ namespace
     return true;
   }
 
-  bool replaceDatabaseWithTemp()
+  bool readNextLine(const String &content, int &index, String &line)
   {
-    SD.remove(cardsPath);
-    return SD.rename(tempPath, cardsPath);
+    if (index >= content.length())
+    {
+      return false;
+    }
+
+    int next = content.indexOf('\n', index);
+
+    if (next < 0)
+    {
+      line = content.substring(index);
+      index = content.length();
+    }
+    else
+    {
+      line = content.substring(index, next);
+      index = next + 1;
+    }
+
+    line.trim();
+    return true;
   }
 }
 
@@ -106,23 +124,19 @@ namespace p_data
   {
     record = CardRecord();
 
-    if (!ready)
+    if (!ready || uid.length() == 0)
     {
       return false;
     }
 
-    File file = SD.open(cardsPath, FILE_READ);
-    if (!file)
-    {
-      return false;
-    }
+    String content = sd_card::readText(cardsPath);
+    int index = 0;
+    String line;
 
-    while (file.available())
+    while (readNextLine(content, index, line))
     {
-      String line = file.readStringUntil('\n');
-      line.trim();
-
       CardRecord current;
+
       if (!parseLine(line, current))
       {
         continue;
@@ -131,12 +145,10 @@ namespace p_data
       if (current.uid == uid)
       {
         record = current;
-        file.close();
         return true;
       }
     }
 
-    file.close();
     return false;
   }
 
@@ -147,31 +159,17 @@ namespace p_data
       return false;
     }
 
-    SD.remove(tempPath);
+    String content = sd_card::readText(cardsPath);
+    String newContent = "uid,name,balance\n";
 
-    File in = SD.open(cardsPath, FILE_READ);
-    File out = SD.open(tempPath, FILE_WRITE);
-
-    if (!in || !out)
-    {
-      if (in)
-        in.close();
-      if (out)
-        out.close();
-      SD.remove(tempPath);
-      return false;
-    }
-
-    out.println("uid,name,balance");
-
+    int index = 0;
+    String line;
     bool updated = false;
 
-    while (in.available())
+    while (readNextLine(content, index, line))
     {
-      String line = in.readStringUntil('\n');
-      line.trim();
-
       CardRecord record;
+
       if (!parseLine(line, record))
       {
         continue;
@@ -184,7 +182,7 @@ namespace p_data
         updated = true;
       }
 
-      out.println(formatLine(record));
+      newContent += formatLine(record) + "\n";
     }
 
     if (!updated)
@@ -194,15 +192,11 @@ namespace p_data
       record.name = emptyFieldSafe(name);
       record.balance = openingBalance;
       record.valid = true;
-      out.println(formatLine(record));
+      newContent += formatLine(record) + "\n";
     }
 
-    in.close();
-    out.close();
-
-    if (!replaceDatabaseWithTemp())
+    if (!sd_card::writeText(cardsPath, newContent))
     {
-      SD.remove(tempPath);
       return false;
     }
 
@@ -223,31 +217,17 @@ namespace p_data
       return false;
     }
 
-    SD.remove(tempPath);
+    String content = sd_card::readText(cardsPath);
+    String newContent = "uid,name,balance\n";
 
-    File in = SD.open(cardsPath, FILE_READ);
-    File out = SD.open(tempPath, FILE_WRITE);
-
-    if (!in || !out)
-    {
-      if (in)
-        in.close();
-      if (out)
-        out.close();
-      SD.remove(tempPath);
-      return false;
-    }
-
-    out.println("uid,name,balance");
-
+    int index = 0;
+    String line;
     bool found = false;
 
-    while (in.available())
+    while (readNextLine(content, index, line))
     {
-      String line = in.readStringUntil('\n');
-      line.trim();
-
       CardRecord record;
+
       if (!parseLine(line, record))
       {
         continue;
@@ -260,25 +240,15 @@ namespace p_data
         found = true;
       }
 
-      out.println(formatLine(record));
+      newContent += formatLine(record) + "\n";
     }
-
-    in.close();
-    out.close();
 
     if (!found)
     {
-      SD.remove(tempPath);
       return false;
     }
 
-    if (!replaceDatabaseWithTemp())
-    {
-      SD.remove(tempPath);
-      return false;
-    }
-
-    return true;
+    return sd_card::writeText(cardsPath, newContent);
   }
 
   bool deductCard(const String &uid, long amount, CardRecord &updatedRecord)
@@ -290,32 +260,18 @@ namespace p_data
       return false;
     }
 
-    SD.remove(tempPath);
+    String content = sd_card::readText(cardsPath);
+    String newContent = "uid,name,balance\n";
 
-    File in = SD.open(cardsPath, FILE_READ);
-    File out = SD.open(tempPath, FILE_WRITE);
-
-    if (!in || !out)
-    {
-      if (in)
-        in.close();
-      if (out)
-        out.close();
-      SD.remove(tempPath);
-      return false;
-    }
-
-    out.println("uid,name,balance");
-
+    int index = 0;
+    String line;
     bool found = false;
     bool enough = false;
 
-    while (in.available())
+    while (readNextLine(content, index, line))
     {
-      String line = in.readStringUntil('\n');
-      line.trim();
-
       CardRecord record;
+
       if (!parseLine(line, record))
       {
         continue;
@@ -334,25 +290,71 @@ namespace p_data
         }
       }
 
-      out.println(formatLine(record));
+      newContent += formatLine(record) + "\n";
     }
-
-    in.close();
-    out.close();
 
     if (!found || !enough)
     {
-      SD.remove(tempPath);
       return false;
     }
 
-    if (!replaceDatabaseWithTemp())
+    return sd_card::writeText(cardsPath, newContent);
+  }
+
+  bool deleteCard(const String &uid)
+  {
+    if (!ready || uid.length() == 0)
     {
-      SD.remove(tempPath);
       return false;
     }
 
-    return true;
+    String content = sd_card::readText(cardsPath);
+    String newContent = "uid,name,balance\n";
+
+    int index = 0;
+    String line;
+    bool deleted = false;
+
+    while (readNextLine(content, index, line))
+    {
+      CardRecord record;
+
+      if (!parseLine(line, record))
+      {
+        continue;
+      }
+
+      if (record.uid == uid)
+      {
+        deleted = true;
+        continue;
+      }
+
+      newContent += formatLine(record) + "\n";
+    }
+
+    if (!deleted)
+    {
+      return false;
+    }
+
+    if (pendingUID == uid)
+    {
+      clearPendingUID();
+    }
+
+    return sd_card::writeText(cardsPath, newContent);
+  }
+
+  bool clearAllCards()
+  {
+    if (!ready)
+    {
+      return false;
+    }
+
+    pendingUID = "";
+    return sd_card::writeText(cardsPath, "uid,name,balance\n");
   }
 
   size_t countCards()
@@ -363,25 +365,21 @@ namespace p_data
     }
 
     size_t count = 0;
-    File file = SD.open(cardsPath, FILE_READ);
-    if (!file)
-    {
-      return 0;
-    }
+    String content = sd_card::readText(cardsPath);
 
-    while (file.available())
-    {
-      String line = file.readStringUntil('\n');
-      line.trim();
+    int index = 0;
+    String line;
 
+    while (readNextLine(content, index, line))
+    {
       CardRecord record;
+
       if (parseLine(line, record))
       {
-        ++count;
+        count++;
       }
     }
 
-    file.close();
     return count;
   }
 
@@ -389,7 +387,7 @@ namespace p_data
   {
     if (!ready)
     {
-      return "SD not ready";
+      return "Storage not ready";
     }
 
     return sd_card::readText(cardsPath);

@@ -6,7 +6,6 @@
 namespace Pins
 {
   extern const uint8_t LED_PIN;
-
   extern const uint8_t BATTERY_ADC_PIN;
 
   extern const uint8_t I2C_SDA_PIN;

@@ -11,6 +11,10 @@ namespace NFC_module
   bool isReady();
   bool consumeUID(String &uid);
   String getLastUID();
+
+  uint32_t getVersion();
+  String getVersionText();
+  void retryInit();
 }
 
 #endif

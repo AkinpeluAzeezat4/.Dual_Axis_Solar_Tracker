@@ -1,12 +1,49 @@
 #include <Arduino.h>
 #include <SPI.h>
+#include <FS.h>
 #include <SD.h>
+#include <LittleFS.h>
 #include "sd_card.h"
 
 namespace
 {
+  fs::FS *activeFS = nullptr;
+  sd_card::StorageBackend backend = sd_card::BACKEND_NONE;
+
   bool ready = false;
   uint8_t cs = 255;
+
+  void createBaseFolders()
+  {
+    if (!ready || activeFS == nullptr)
+    {
+      return;
+    }
+
+    if (!activeFS->exists("/db"))
+    {
+      activeFS->mkdir("/db");
+    }
+
+    if (!activeFS->exists("/logs"))
+    {
+      activeFS->mkdir("/logs");
+    }
+  }
+
+  bool startInternalStorage()
+  {
+    if (!LittleFS.begin(true))
+    {
+      return false;
+    }
+
+    activeFS = &LittleFS;
+    backend = sd_card::BACKEND_INTERNAL;
+    ready = true;
+    createBaseFolders();
+    return true;
+  }
 }
 
 namespace sd_card
@@ -14,24 +51,27 @@ namespace sd_card
   void begin(uint8_t csPin, uint8_t mosiPin, uint8_t misoPin, uint8_t sckPin)
   {
     ready = false;
+    activeFS = nullptr;
+    backend = BACKEND_NONE;
     cs = csPin;
 
-    if (csPin == 255)
+    if (csPin != 255)
     {
-      return;
+      SPI.begin(sckPin, misoPin, mosiPin, csPin);
+      pinMode(csPin, OUTPUT);
+      digitalWrite(csPin, HIGH);
+
+      if (SD.begin(csPin, SPI))
+      {
+        activeFS = &SD;
+        backend = BACKEND_SD;
+        ready = true;
+        createBaseFolders();
+        return;
+      }
     }
 
-    SPI.begin(sckPin, misoPin, mosiPin, csPin);
-    pinMode(csPin, OUTPUT);
-    digitalWrite(csPin, HIGH);
-
-    ready = SD.begin(csPin, SPI);
-
-    if (ready)
-    {
-      SD.mkdir("/db");
-      SD.mkdir("/logs");
-    }
+    startInternalStorage();
   }
 
   void update()
@@ -40,32 +80,32 @@ namespace sd_card
 
   bool isReady()
   {
-    return ready;
+    return ready && activeFS != nullptr;
   }
 
   bool exists(const char *path)
   {
-    if (!ready)
+    if (!isReady())
     {
       return false;
     }
 
-    return SD.exists(path);
+    return activeFS->exists(path);
   }
 
   bool writeText(const char *path, const String &text)
   {
-    if (!ready)
+    if (!isReady())
     {
       return false;
     }
 
-    if (SD.exists(path))
+    if (activeFS->exists(path))
     {
-      SD.remove(path);
+      activeFS->remove(path);
     }
 
-    File file = SD.open(path, FILE_WRITE);
+    File file = activeFS->open(path, FILE_WRITE);
     if (!file)
     {
       return false;
@@ -78,15 +118,16 @@ namespace sd_card
 
   bool appendLine(const char *path, const String &line)
   {
-    if (!ready)
+    if (!isReady())
     {
       return false;
     }
 
-    File file = SD.open(path, FILE_APPEND);
+    File file = activeFS->open(path, FILE_APPEND);
+
     if (!file)
     {
-      file = SD.open(path, FILE_WRITE);
+      file = activeFS->open(path, FILE_WRITE);
       if (!file)
       {
         return false;
@@ -102,12 +143,12 @@ namespace sd_card
   {
     String content;
 
-    if (!ready)
+    if (!isReady())
     {
       return content;
     }
 
-    File file = SD.open(path, FILE_READ);
+    File file = activeFS->open(path, FILE_READ);
     if (!file)
     {
       return content;
@@ -124,16 +165,66 @@ namespace sd_card
 
   bool removeFile(const char *path)
   {
-    if (!ready)
+    if (!isReady())
     {
       return false;
     }
 
-    if (!SD.exists(path))
+    if (!activeFS->exists(path))
     {
       return true;
     }
 
-    return SD.remove(path);
+    return activeFS->remove(path);
+  }
+
+  bool renameFile(const char *oldPath, const char *newPath)
+  {
+    if (!isReady())
+    {
+      return false;
+    }
+
+    if (!activeFS->exists(oldPath))
+    {
+      return false;
+    }
+
+    if (activeFS->exists(newPath))
+    {
+      activeFS->remove(newPath);
+    }
+
+    return activeFS->rename(oldPath, newPath);
+  }
+
+  StorageBackend getBackend()
+  {
+    return backend;
+  }
+
+  bool isUsingSD()
+  {
+    return backend == BACKEND_SD;
+  }
+
+  bool isUsingInternal()
+  {
+    return backend == BACKEND_INTERNAL;
+  }
+
+  String getBackendName()
+  {
+    if (backend == BACKEND_SD)
+    {
+      return "SD Card";
+    }
+
+    if (backend == BACKEND_INTERNAL)
+    {
+      return "Internal Storage";
+    }
+
+    return "No Storage";
   }
 }

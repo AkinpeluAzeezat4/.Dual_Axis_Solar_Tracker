@@ -36,7 +36,7 @@ namespace battery_level
     }
 
     float raw = sum / 16.0f;
-    float adcVoltage = (raw / 4095.0f) * 3.3f;
+    float adcVoltage = (raw / 4095.0f) * 7.6f;
 
     auto &s = settings_manager::get();
     voltage = adcVoltage * s.batteryScaleFactor;

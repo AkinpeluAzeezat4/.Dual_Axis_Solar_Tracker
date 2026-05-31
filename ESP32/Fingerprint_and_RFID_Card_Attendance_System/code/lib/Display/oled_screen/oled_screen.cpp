@@ -88,12 +88,12 @@ namespace oled_screen
 
   void showReady(const String &ip)
   {
-    show("System Ready", "Tap card first", "Then fingerprint", "Web: " + ip);
+    show("   ATTENDANCE SYSTEM   ", "Tap card first", "Then fingerprint", "Web: " + ip);
   }
 
   void showError(const String &message)
   {
-    show("System Error", message, "Check hardware", "or SD card");
+    show("System Error", message, "Check hardware", "or storage");
   }
 
   bool isReady()

@@ -4,8 +4,8 @@
 
 namespace wifi_manager
 {
-    static const char *apSsid = "SmartCar_PID";
-    static const char *apPassword = "12345678";
+    static const char *apSsid = "softwork";
+    static const char *apPassword = "softwork1234";
     static bool ready = false;
 
     void begin()
