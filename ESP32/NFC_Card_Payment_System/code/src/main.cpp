@@ -252,7 +252,8 @@ void setup()
 
   button::begin(Pins::BTN_UP_PIN, Pins::BTN_DOWN_PIN, Pins::BTN_LEFT_PIN, Pins::BTN_RIGHT_PIN, Pins::BTN_OK_PIN, true);
   buzzer::begin(Pins::BUZZER_PIN);
-  battery_level::begin(Pins::BATTERY_ADC_PIN, 4.615f);
+  // battery_level::begin(Pins::BATTERY_ADC_PIN, 1.61f);
+  battery_level::begin();
 
   oled_screen::begin(Pins::I2C_SDA_PIN, Pins::I2C_SCL_PIN);
   led_indicator::begin(Pins::LED_PIN);
@@ -279,11 +280,18 @@ void loop()
   button::update();
   buzzer::update();
   battery_level::update();
+  error_handling::setBatteryError(battery_level::isLow());
+
+  if (battery_level::shouldSleep())
+  {
+    oled_screen::update("error", "Low Battery");
+    delay(1500);
+    battery_level::sleepNow();
+  }
   rtc::update();
   NFC_module::update();
   wifi_service::update();
   reset::update();
-
   updateStateMachine();
   updateStatusLed();
   renderScreen();

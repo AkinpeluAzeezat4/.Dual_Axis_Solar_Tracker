@@ -14,22 +14,22 @@ namespace Pins
   static const uint8_t SHARED_SCK = 12;
   static const uint8_t SHARED_MISO = 13;
 
-  static const uint8_t RC522_SS = 10;
+  static const uint8_t RC522_SS = 5;
   static const uint8_t RC522_RST = 4;
 
-  static const uint8_t SD_CARD_CS = 15;
-  static const uint8_t BUZZER_PIN = 5;
+  static const uint8_t SD_CARD_CS = 10;
+  static const uint8_t BUZZER_PIN = 15;
 
   static const uint8_t FINGERPRINT_TX = 17;
   static const uint8_t FINGERPRINT_RX = 18;
 
-  static const uint8_t BTN1 = 1;
-  static const uint8_t BTN2 = 6;
-  static const uint8_t BTN3 = 7;
-  static const uint8_t BTN4 = 16;
+  static const uint8_t BTN1 = 6;
+  static const uint8_t BTN2 = 2;
+  static const uint8_t BTN3 = 16;
+  static const uint8_t BTN4 = 7;
   static const uint8_t BTN5 = 3;
 
-  static const uint8_t BATTERY_ADC = 2;
+  static const uint8_t BATTERY_ADC = 1;
   static constexpr float BATTERY_SCALE = 2.0f;
 
   static const uint8_t USB_D_MINUS = 19;

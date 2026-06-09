@@ -7,6 +7,7 @@ namespace
   bool nfcError = false;
   bool rtcError = false;
   bool codeError = false;
+  bool batteryError = false;
 }
 
 namespace error_handling
@@ -17,6 +18,7 @@ namespace error_handling
     nfcError = false;
     rtcError = false;
     codeError = false;
+    batteryError = false;
   }
 
   void update()
@@ -43,19 +45,30 @@ namespace error_handling
     codeError = state;
   }
 
+  void setBatteryError(bool state)
+  {
+    batteryError = state;
+  }
+
   bool hasError()
   {
-    return sdError || nfcError || rtcError || codeError;
+    return sdError || nfcError || rtcError || codeError || batteryError;
   }
 
   String getFirstErrorText()
   {
+    if (batteryError)
+      return "Low Battery";
+
     if (sdError)
       return "SD Card Fault";
+
     if (nfcError)
       return "NFC Fault";
+
     if (rtcError)
       return "RTC Fault";
+
     if (codeError)
       return "System Fault";
 
