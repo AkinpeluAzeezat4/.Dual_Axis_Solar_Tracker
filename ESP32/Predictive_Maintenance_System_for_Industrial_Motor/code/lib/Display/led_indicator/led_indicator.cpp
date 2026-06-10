@@ -18,8 +18,8 @@ namespace led_indicator
 
   static unsigned long lastUpdate = 0;
   static unsigned long lastBlink = 0;
-  static const uint16_t normalStepTime = 4;
-  static const uint16_t warningStepTime = 2;
+  static const uint16_t normalStepTime = 2;
+  static const uint16_t warningStepTime = 1;
 
   static uint8_t pulseCount = 0;
   static bool inPause = false;

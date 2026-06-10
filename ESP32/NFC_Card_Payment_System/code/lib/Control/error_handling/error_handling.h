@@ -12,6 +12,7 @@ namespace error_handling
   void setNfcError(bool state);
   void setRtcError(bool state);
   void setCodeError(bool state);
+  void setBatteryError(bool state);
 
   bool hasError();
   String getFirstErrorText();

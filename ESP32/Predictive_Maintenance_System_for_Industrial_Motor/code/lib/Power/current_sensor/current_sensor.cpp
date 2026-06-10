@@ -89,6 +89,7 @@ namespace current_sensor
       samplesTaken++;
       burstCount++;
       nowUs = micros();
+      yield();
     }
 
     if (samplesTaken >= SAMPLE_TARGET)

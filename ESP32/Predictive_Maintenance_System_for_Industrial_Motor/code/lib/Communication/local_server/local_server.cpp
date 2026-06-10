@@ -456,8 +456,16 @@ setInterval(loadLogs,10000);
     json += ",";
 
     json += "\"sd_ready\":";
-    json += sd_card::isReady() ? "true" : "false";
+    json += sd_card::isSdReady() ? "true" : "false";
     json += ",";
+
+    json += "\"internal_ready\":";
+    json += sd_card::isInternalReady() ? "true" : "false";
+    json += ",";
+
+    json += "\"backend\":\"";
+    json += jsonEscape(sd_card::getBackendName());
+    json += "\",";
 
     json += "\"internal_ready\":";
     json += sd_card::isInternalReady() ? "true" : "false";

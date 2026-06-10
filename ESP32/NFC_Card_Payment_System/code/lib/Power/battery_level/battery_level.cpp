@@ -1,40 +1,111 @@
 #include <Arduino.h>
 #include "battery_level.h"
+#include "Pins.h"
 
 namespace battery_level
 {
-  static uint8_t batteryPin = 255;
   static float voltage = 0.0f;
-  static float scaleFactor = 3.8f;
+  static uint8_t percentage = 0;
+  static int rawValue = 0;
 
-  static unsigned long lastReadTime = 0;
-  static const unsigned long readInterval = 500;
+  static unsigned long lastUpdate = 0;
+  static unsigned long lastPrint = 0;
+  static unsigned long lowBatteryStart = 0;
 
-  void begin(uint8_t pin, float scale)
+  static const unsigned long updateInterval = 500;
+  static const unsigned long printInterval = 1000;
+  static const unsigned long lowBatterySleepDelay = 5000;
+
+  static const float adcRef = 3.3f;
+  static const float adcMax = 4095.0f;
+
+  static const float dividerRatio = 1.23f;
+
+  static const float batteryMin = 3.20f;
+  static const float batteryMax = 4.0f;
+  static const uint8_t lowBatteryPercent = 20;
+
+  static uint8_t voltageToPercent(float v)
   {
-    batteryPin = pin;
-    scaleFactor = scale;
+    if (v <= batteryMin)
+    {
+      return 0;
+    }
 
+    if (v >= batteryMax)
+    {
+      return 100;
+    }
+
+    return (uint8_t)(((v - batteryMin) / (batteryMax - batteryMin)) * 100.0f);
+  }
+
+  static void readBattery()
+  {
+    uint32_t sum = 0;
+
+    for (uint8_t i = 0; i < 20; i++)
+    {
+      sum += analogRead(Pins::BATTERY_ADC_PIN);
+      delayMicroseconds(200);
+    }
+
+    rawValue = sum / 20;
+
+    float adcVoltage = (rawValue * adcRef) / adcMax;
+    voltage = adcVoltage * dividerRatio;
+    percentage = voltageToPercent(voltage);
+  }
+
+  static void printBattery()
+  {
+    // Serial.print("Battery Raw: ");
+    // Serial.print(rawValue);
+    // Serial.print(" | Voltage: ");
+    // Serial.print(voltage, 3);
+    // Serial.print(" V | Percentage: ");
+    // Serial.print(percentage);
+    // Serial.println(" %");
+  }
+
+  void begin()
+  {
     analogReadResolution(12);
-    analogSetPinAttenuation(batteryPin, ADC_11db);
+    analogSetPinAttenuation(Pins::BATTERY_ADC_PIN, ADC_11db);
+
+    readBattery();
+
+    lastUpdate = millis();
+    lastPrint = millis();
+    lowBatteryStart = 0;
   }
 
   void update()
   {
-    if (batteryPin == 255)
-    {
-      return;
-    }
-
     unsigned long now = millis();
 
-    if (now - lastReadTime >= readInterval)
+    if (now - lastUpdate >= updateInterval)
     {
-      lastReadTime = now;
+      lastUpdate = now;
+      readBattery();
+    }
 
-      int raw = analogRead(batteryPin);
-      float adcVoltage = (raw / 4095.0f) * 3.3f;
-      voltage = adcVoltage * scaleFactor;
+    if (now - lastPrint >= printInterval)
+    {
+      lastPrint = now;
+      printBattery();
+    }
+
+    if (isLow())
+    {
+      if (lowBatteryStart == 0)
+      {
+        lowBatteryStart = now;
+      }
+    }
+    else
+    {
+      lowBatteryStart = 0;
     }
   }
 
@@ -45,14 +116,42 @@ namespace battery_level
 
   uint8_t getPercentage()
   {
-    float percent = ((voltage - 3.0f) / (4.2f - 3.0f)) * 100.0f;
+    return percentage;
+  }
 
-    if (percent < 0.0f)
-      percent = 0.0f;
+  int getRaw()
+  {
+    return rawValue;
+  }
 
-    if (percent > 100.0f)
-      percent = 100.0f;
+  bool isLow()
+  {
+    return percentage <= lowBatteryPercent;
+  }
 
-    return (uint8_t)percent;
+  bool shouldSleep()
+  {
+    if (!isLow())
+    {
+      return false;
+    }
+
+    if (lowBatteryStart == 0)
+    {
+      return false;
+    }
+
+    return millis() - lowBatteryStart >= lowBatterySleepDelay;
+  }
+
+  void sleepNow()
+  {
+    // Serial.println("Low battery. Entering deep sleep...");
+    // Serial.flush();
+
+    delay(300);
+
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_ALL);
+    esp_deep_sleep_start();
   }
 }
