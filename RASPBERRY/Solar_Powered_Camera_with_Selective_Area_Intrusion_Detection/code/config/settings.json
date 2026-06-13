@@ -1,7 +1,0 @@
-{
-  "camera_off_delay": 20,
-  "auto_save_delay": 7,
-  "email_enabled": true,
-  "buzzer_enabled": true,
-  "motion_area_threshold": 800
-}
